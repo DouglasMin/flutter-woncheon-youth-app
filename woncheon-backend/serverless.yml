@@ -1,0 +1,212 @@
+service: woncheon-backend
+
+frameworkVersion: "4"
+
+provider:
+  name: aws
+  runtime: nodejs22.x
+  region: ap-northeast-2
+  profile: dongik2
+  stage: ${opt:stage, 'dev'}
+  environment:
+    TABLE_NAME: woncheon-${sls:stage}
+    JWT_SECRET: ${ssm:/woncheon/${sls:stage}/jwt-secret}
+    JWT_REFRESH_SECRET: ${ssm:/woncheon/${sls:stage}/jwt-refresh-secret}
+    SNS_IOS_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-ios-arn, ''}
+    SNS_ANDROID_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-android-arn, ''}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:ap-northeast-2:863518440691:table/woncheon-${sls:stage}
+            - arn:aws:dynamodb:ap-northeast-2:863518440691:table/woncheon-${sls:stage}/index/*
+        - Effect: Allow
+          Action:
+            - sns:Publish
+            - sns:CreatePlatformEndpoint
+          Resource: "*"
+
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    target: node22
+    platform: node
+    format: cjs
+    exclude:
+      - "@aws-sdk/*"
+
+plugins:
+  - serverless-offline
+
+functions:
+  # ── Authorizer ──────────────────────────────
+  jwtAuthorizer:
+    handler: src/functions/auth/authorizer.handler
+
+  # ── Auth ────────────────────────────────────
+  login:
+    handler: src/functions/auth/login.handler
+    events:
+      - http:
+          path: /auth/login
+          method: post
+          cors: true
+
+  changePassword:
+    handler: src/functions/auth/changePassword.handler
+    events:
+      - http:
+          path: /auth/change-password
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  refresh:
+    handler: src/functions/auth/refresh.handler
+    events:
+      - http:
+          path: /auth/refresh
+          method: post
+          cors: true
+
+  registerDeviceToken:
+    handler: src/functions/auth/deviceToken.handler
+    events:
+      - http:
+          path: /auth/device-token
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  # ── Prayer ──────────────────────────────────
+  listPrayers:
+    handler: src/functions/prayer/list.handler
+    events:
+      - http:
+          path: /prayers
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  createPrayer:
+    handler: src/functions/prayer/create.handler
+    events:
+      - http:
+          path: /prayers
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  getPrayer:
+    handler: src/functions/prayer/get.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  deletePrayer:
+    handler: src/functions/prayer/delete.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}
+          method: delete
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  # ── Notification ────────────────────────────
+  sendWeeklyNotification:
+    handler: src/functions/notification/sendWeekly.handler
+    events:
+      - schedule:
+          rate: cron(0 11 ? * SAT *)
+          enabled: true
+
+resources:
+  Resources:
+    WoncheonTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: woncheon-${sls:stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: GSI1PK
+            AttributeType: S
+          - AttributeName: GSI1SK
+            AttributeType: S
+          - AttributeName: GSI2PK
+            AttributeType: S
+          - AttributeName: GSI2SK
+            AttributeType: S
+          - AttributeName: GSI3PK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: GSI1PK
+                KeyType: HASH
+              - AttributeName: GSI1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI2
+            KeySchema:
+              - AttributeName: GSI2PK
+                KeyType: HASH
+              - AttributeName: GSI2SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: GSI3
+            KeySchema:
+              - AttributeName: GSI3PK
+                KeyType: HASH
+            Projection:
+              ProjectionType: KEYS_ONLY
+        TimeToLiveSpecification:
+          AttributeName: expiresAt
+          Enabled: true

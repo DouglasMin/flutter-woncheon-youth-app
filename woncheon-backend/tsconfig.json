@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022"],
+    "outDir": ".build",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "paths": {
+      "@libs/*": ["src/libs/*"],
+      "@types/*": ["src/types/*"]
+    }
+  },
+  "include": ["src/**/*", "scripts/**/*", "tests/**/*"],
+  "exclude": ["node_modules", ".build", ".serverless"]
+}
