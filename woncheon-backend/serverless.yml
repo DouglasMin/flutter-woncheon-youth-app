@@ -149,6 +149,85 @@ functions:
             identitySource: method.request.header.Authorization
             type: request
 
+  # ── Comments & Reactions ─────────────────────
+  listComments:
+    handler: src/functions/comment/list.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/comments
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  createComment:
+    handler: src/functions/comment/create.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/comments
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  updateComment:
+    handler: src/functions/comment/update.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/comments/{commentId}
+          method: put
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  deleteComment:
+    handler: src/functions/comment/delete.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/comments/{commentId}
+          method: delete
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  getReaction:
+    handler: src/functions/comment/getReaction.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/reaction
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  toggleReaction:
+    handler: src/functions/comment/reaction.handler
+    events:
+      - http:
+          path: /prayers/{prayerId}/reaction
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
   # ── Notification ────────────────────────────
   sendWeeklyNotification:
     handler: src/functions/notification/sendWeekly.handler

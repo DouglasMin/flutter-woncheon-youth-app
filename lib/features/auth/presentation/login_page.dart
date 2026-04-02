@@ -108,11 +108,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFFECECEA), AppColors.surface],
+            colors: Theme.of(context).brightness == Brightness.dark
+                ? const [AppColors.darkSurface, AppColors.darkSurface]
+                : const [Color(0xFFECECEA), AppColors.surface],
           ),
         ),
         child: SafeArea(
@@ -156,11 +158,11 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: context.cardColor,
                           borderRadius: BorderRadius.circular(20),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(8),
+                              color: context.cardShadowColor,
                               blurRadius: 24,
                               offset: const Offset(0, 4),
                             ),

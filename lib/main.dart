@@ -93,6 +93,7 @@ class _WoncheonYouthAppState extends ConsumerState<WoncheonYouthApp> {
       title: '원천청년부',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       routerConfig: router,
       localizationsDelegates: L10n.localizationsDelegates,
       supportedLocales: L10n.supportedLocales,

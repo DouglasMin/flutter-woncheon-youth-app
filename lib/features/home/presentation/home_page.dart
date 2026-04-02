@@ -1,16 +1,23 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 
-class HomePage extends StatelessWidget {
+final _memberNameProvider = FutureProvider<String>((ref) async {
+  final storage = ref.watch(secureStorageServiceProvider);
+  return await storage.getMemberName() ?? '청년부원';
+});
+
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (isIOS) {
       return CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
@@ -18,22 +25,25 @@ class HomePage extends StatelessWidget {
             '원천청년부',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
-          backgroundColor: AppTheme.cupertino.barBackgroundColor,
+          backgroundColor: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+              ? AppTheme.cupertinoDark.barBackgroundColor
+              : AppTheme.cupertinoLight.barBackgroundColor,
         ),
         child: Material(
           type: MaterialType.transparency,
-          child: _buildBody(context),
+          child: _buildBody(context, ref),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(title: const Text('원천청년부')),
-      body: _buildBody(context),
+      body: _buildBody(context, ref),
     );
   }
 
-  Widget _buildBody(BuildContext context) {
+  Widget _buildBody(BuildContext context, WidgetRef ref) {
+    final memberName = ref.watch(_memberNameProvider).valueOrNull ?? '청년부원';
     return SafeArea(
       child: SingleChildScrollView(
         child: Column(
@@ -69,7 +79,7 @@ class HomePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Positioned(
+                    Positioned(
                       left: 24,
                       right: 24,
                       bottom: 22,
@@ -77,8 +87,8 @@ class HomePage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '함께 기도하는\n원천청년부',
-                            style: TextStyle(
+                            '$memberName님,\n오늘도 함께 기도해요',
+                            style: const TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textOnDark,
@@ -86,9 +96,9 @@ class HomePage extends StatelessWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          SizedBox(height: 6),
-                          Text(
-                            '오늘도 서로를 위해 기도해요',
+                          const SizedBox(height: 6),
+                          const Text(
+                            '원천청년부',
                             style: TextStyle(
                               fontSize: 14,
                               color: AppColors.textOnDarkSecondary,
@@ -307,7 +317,7 @@ class _MenuCard extends StatelessWidget {
       opacity: enabled ? 1.0 : 0.45,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.cardColor,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(

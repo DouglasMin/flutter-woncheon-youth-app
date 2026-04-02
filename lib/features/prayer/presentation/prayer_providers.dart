@@ -5,6 +5,7 @@ import 'package:woncheon_youth/core/mock/mock_prayer_repository.dart';
 import 'package:woncheon_youth/core/storage/read_prayers_storage.dart';
 import 'package:woncheon_youth/features/prayer/data/prayer_repository.dart';
 import 'package:woncheon_youth/features/prayer/domain/prayer_filter.dart';
+import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
 import 'package:woncheon_youth/features/prayer/domain/prayer_model.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 
@@ -19,6 +20,11 @@ final mockPrayerRepositoryProvider = Provider<MockPrayerRepository>((ref) {
 final prayerFilterProvider =
     StateProvider<PrayerFilter>((ref) => const PrayerFilter());
 
+enum PrayerViewMode { list, card }
+
+final prayerViewModeProvider =
+    StateProvider<PrayerViewMode>((ref) => PrayerViewMode.list);
+
 final readPrayersStorageProvider = Provider<ReadPrayersStorage>((ref) {
   return ReadPrayersStorage();
 });
@@ -28,6 +34,45 @@ final readPrayerIdsProvider = FutureProvider<Set<String>>((ref) async {
   final storage = ref.watch(readPrayersStorageProvider);
   return storage.getReadIds();
 });
+
+// Comments
+final commentsProvider =
+    FutureProvider.family<List<CommentItem>, String>((ref, prayerId) async {
+  if (kMockMode) return [];
+  final repo = ref.watch(prayerRepositoryProvider);
+  return repo.getComments(prayerId);
+});
+
+// Reactions — loaded from server, cached locally
+final reactionProvider =
+    AsyncNotifierProvider.family<ReactionNotifier, ReactionState, String>(
+  ReactionNotifier.new,
+);
+
+class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
+  @override
+  Future<ReactionState> build(String prayerId) async {
+    if (kMockMode) return const ReactionState(reacted: false, count: 0);
+    final repo = ref.read(prayerRepositoryProvider);
+    return repo.getReaction(prayerId);
+  }
+
+  Future<void> toggle() async {
+    final prayerId = arg;
+    if (kMockMode) {
+      final current = state.valueOrNull ??
+          const ReactionState(reacted: false, count: 0);
+      state = AsyncData(ReactionState(
+        reacted: !current.reacted,
+        count: current.reacted ? current.count - 1 : current.count + 1,
+      ));
+      return;
+    }
+    final repo = ref.read(prayerRepositoryProvider);
+    final result = await repo.toggleReaction(prayerId);
+    state = AsyncData(result);
+  }
+}
 
 final prayerDetailProvider =
     FutureProvider.family<PrayerDetail, String>((ref, prayerId) async {

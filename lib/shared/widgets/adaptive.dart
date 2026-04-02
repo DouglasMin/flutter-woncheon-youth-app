@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:woncheon_youth/core/theme/app_theme.dart';
 
 bool get isIOS => Platform.isIOS;
 
@@ -120,6 +121,23 @@ class AdaptiveTextField extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Theme-aware color helpers
+extension DarkModeColors on BuildContext {
+  bool get isDark => Theme.of(this).brightness == Brightness.dark;
+  Color get cardColor =>
+      isDark ? AppColors.darkSurfaceCard : AppColors.surfaceCard;
+  Color get cardShadowColor =>
+      isDark ? Colors.black.withAlpha(20) : Colors.black.withAlpha(8);
+  Color get textPrimary =>
+      isDark ? AppColors.darkTextPrimary : AppColors.textPrimary;
+  Color get textSecondary =>
+      isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
+  Color get textTertiary =>
+      isDark ? AppColors.darkTextTertiary : AppColors.textTertiary;
+  Color get dividerColor =>
+      isDark ? AppColors.darkDivider : AppColors.divider;
 }
 
 /// Haptic helper

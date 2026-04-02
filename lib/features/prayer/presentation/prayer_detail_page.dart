@@ -7,7 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
+import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
+import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 
 class PrayerDetailPage extends ConsumerWidget {
@@ -81,11 +83,11 @@ class PrayerDetailPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(6),
+                      color: context.cardShadowColor,
                       blurRadius: 12,
                       offset: const Offset(0, 2),
                     ),
@@ -156,11 +158,11 @@ class PrayerDetailPage extends ConsumerWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withAlpha(6),
+                      color: context.cardShadowColor,
                       blurRadius: 12,
                       offset: const Offset(0, 2),
                     ),
@@ -168,14 +170,24 @@ class PrayerDetailPage extends ConsumerWidget {
                 ),
                 child: Text(
                   prayer.content,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     height: 1.8,
-                    color: AppColors.textPrimary,
+                    color: context.textPrimary,
                     letterSpacing: 0.1,
                   ),
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Reaction button
+              _ReactionButton(prayerId: prayerId),
+
+              const SizedBox(height: 20),
+
+              // Comments section
+              _CommentsSection(prayerId: prayerId),
             ],
           ),
         );
@@ -189,7 +201,9 @@ class PrayerDetailPage extends ConsumerWidget {
             '중보기도',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
-          backgroundColor: AppTheme.cupertino.barBackgroundColor,
+          backgroundColor: MediaQuery.platformBrightnessOf(context) == Brightness.dark
+              ? AppTheme.cupertinoDark.barBackgroundColor
+              : AppTheme.cupertinoLight.barBackgroundColor,
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -235,10 +249,451 @@ class PrayerDetailPage extends ConsumerWidget {
       if (context.mounted) context.pop();
     } on DioException {
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('삭제에 실패했습니다.')));
+        _showErrorMessage(context, '삭제에 실패했습니다.');
       }
     }
+  }
+
+}
+
+// ── Reaction Button ──
+class _ReactionButton extends ConsumerWidget {
+  const _ReactionButton({required this.prayerId});
+
+  final String prayerId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncState = ref.watch(reactionProvider(prayerId));
+    final state = asyncState.valueOrNull ??
+        const ReactionState(reacted: false, count: 0);
+
+    return GestureDetector(
+      onTap: () async {
+        await Haptic.medium();
+        await ref.read(reactionProvider(prayerId).notifier).toggle();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: state.reacted
+              ? AppColors.accent.withAlpha(20)
+              : context.cardColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: state.reacted
+                ? AppColors.accent.withAlpha(60)
+                : context.dividerColor,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '🙏',
+              style: TextStyle(fontSize: state.reacted ? 20 : 18),
+            ),
+            if (state.count > 0) ...[
+              const SizedBox(width: 6),
+              Text(
+                '${state.count}',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: state.reacted
+                      ? AppColors.accent
+                      : context.textSecondary,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Comments Section ──
+class _CommentsSection extends ConsumerStatefulWidget {
+  const _CommentsSection({required this.prayerId});
+
+  final String prayerId;
+
+  @override
+  ConsumerState<_CommentsSection> createState() => _CommentsSectionState();
+}
+
+class _CommentsSectionState extends ConsumerState<_CommentsSection> {
+  final _controller = TextEditingController();
+  bool _isSending = false;
+  String? _currentMemberId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMemberId();
+  }
+
+  Future<void> _loadMemberId() async {
+    final storage = ref.read(secureStorageServiceProvider);
+    final id = await storage.getMemberId();
+    if (mounted) setState(() => _currentMemberId = id);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _showCommentActions(BuildContext context, CommentItem comment) {
+    Haptic.medium();
+    if (isIOS) {
+      showCupertinoModalPopup<void>(
+        context: context,
+        builder: (ctx) => CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _editComment(context, comment);
+              },
+              child: const Text('수정'),
+            ),
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                _deleteComment(context, comment);
+              },
+              child: const Text('삭제'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('취소'),
+          ),
+        ),
+      );
+    } else {
+      showModalBottomSheet<void>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(FluentIcons.edit_24_regular),
+                title: const Text('수정'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _editComment(context, comment);
+                },
+              ),
+              ListTile(
+                leading: Icon(
+                  FluentIcons.delete_24_regular,
+                  color: AppColors.error,
+                ),
+                title: Text(
+                  '삭제',
+                  style: TextStyle(color: AppColors.error),
+                ),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _deleteComment(context, comment);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _editComment(
+    BuildContext context,
+    CommentItem comment,
+  ) async {
+    final editController = TextEditingController(text: comment.content);
+
+    final newContent = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('댓글 수정'),
+        content: TextField(
+          controller: editController,
+          maxLines: 3,
+          maxLength: 200,
+          decoration: const InputDecoration(
+            hintText: '댓글을 수정하세요...',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(editController.text),
+            child: const Text('수정'),
+          ),
+        ],
+      ),
+    );
+
+    editController.dispose();
+
+    if (newContent == null || newContent.trim().isEmpty || !context.mounted) {
+      return;
+    }
+
+    try {
+      if (!kMockMode) {
+        final repo = ref.read(prayerRepositoryProvider);
+        await repo.updateComment(
+          prayerId: widget.prayerId,
+          commentId: comment.commentId,
+          content: newContent.trim(),
+        );
+        ref.invalidate(commentsProvider(widget.prayerId));
+      }
+      await Haptic.light();
+    } catch (_) {
+      if (context.mounted) {
+        _showErrorMessage(context, '댓글 수정에 실패했습니다.');
+      }
+    }
+  }
+
+  Future<void> _deleteComment(
+    BuildContext context,
+    CommentItem comment,
+  ) async {
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: '댓글 삭제',
+      content: '이 댓글을 삭제하시겠습니까?',
+      confirmText: '삭제',
+      isDestructive: true,
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      if (!kMockMode) {
+        final repo = ref.read(prayerRepositoryProvider);
+        await repo.deleteComment(
+          prayerId: widget.prayerId,
+          commentId: comment.commentId,
+        );
+        ref.invalidate(commentsProvider(widget.prayerId));
+      }
+      await Haptic.light();
+    } catch (_) {
+      if (context.mounted) {
+        _showErrorMessage(context, '댓글 삭제에 실패했습니다.');
+      }
+    }
+  }
+
+  Future<void> _submitComment() async {
+    final content = _controller.text.trim();
+    if (content.isEmpty) return;
+
+    setState(() => _isSending = true);
+    await Haptic.light();
+
+    try {
+      if (!kMockMode) {
+        final repo = ref.read(prayerRepositoryProvider);
+        await repo.createComment(
+          prayerId: widget.prayerId,
+          content: content,
+        );
+        ref.invalidate(commentsProvider(widget.prayerId));
+      }
+      _controller.clear();
+    } catch (_) {
+      if (mounted) {
+        _showErrorMessage(context, '댓글 작성에 실패했습니다.');
+      }
+    } finally {
+      if (mounted) setState(() => _isSending = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final commentsAsync = ref.watch(commentsProvider(widget.prayerId));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '댓글',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: context.textSecondary,
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Comment input
+        Row(
+          children: [
+            Expanded(
+              child: AdaptiveTextField(
+                controller: _controller,
+                placeholder: '댓글을 입력하세요...',
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _submitComment(),
+              ),
+            ),
+            const SizedBox(width: 8),
+            IconButton(
+              onPressed: _isSending ? null : _submitComment,
+              icon: _isSending
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Icon(
+                      FluentIcons.send_24_filled,
+                      color: AppColors.accent,
+                    ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Comments list
+        commentsAsync.when(
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => Text(
+            '댓글을 불러올 수 없습니다.',
+            style: TextStyle(color: context.textTertiary, fontSize: 13),
+          ),
+          data: (comments) {
+            if (comments.isEmpty) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  '아직 댓글이 없습니다.',
+                  style: TextStyle(color: context.textTertiary, fontSize: 13),
+                ),
+              );
+            }
+
+            return Column(
+              children: comments.map((c) {
+                final date = DateTime.tryParse(c.createdAt);
+                final dateStr = date != null
+                    ? DateFormat('M/d HH:mm', 'ko').format(date.toLocal())
+                    : '';
+                final isMine = _currentMemberId != null &&
+                    c.memberId == _currentMemberId;
+
+                return GestureDetector(
+                  onLongPress: isMine
+                      ? () => _showCommentActions(context, c)
+                      : null,
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CircleAvatar(
+                          radius: 14,
+                          backgroundColor: AppColors.primaryDark,
+                          child: Text(
+                            c.authorName.isEmpty ? '?' : c.authorName[0],
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    c.authorName,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: context.textPrimary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    dateStr,
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: context.textTertiary,
+                                    ),
+                                  ),
+                                  if (isMine) ...[
+                                    const Spacer(),
+                                    Text(
+                                      '꾹 눌러서 수정/삭제',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: context.textTertiary,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                c.content,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: context.textSecondary,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+void _showErrorMessage(BuildContext context, String message) {
+  if (isIOS) {
+    showCupertinoDialog<void>(
+      context: context,
+      builder: (ctx) => CupertinoAlertDialog(
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
