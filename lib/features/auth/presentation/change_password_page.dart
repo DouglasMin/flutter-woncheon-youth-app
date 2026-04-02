@@ -9,8 +9,8 @@ import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/mock/mock_auth_repository.dart';
 import 'package:woncheon_youth/core/mock/mock_mode.dart';
-import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/push/push_providers.dart';
+import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
@@ -19,8 +19,7 @@ class ChangePasswordPage extends ConsumerStatefulWidget {
   const ChangePasswordPage({super.key});
 
   @override
-  ConsumerState<ChangePasswordPage> createState() =>
-      _ChangePasswordPageState();
+  ConsumerState<ChangePasswordPage> createState() => _ChangePasswordPageState();
 }
 
 class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
@@ -94,8 +93,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     } on DioException catch (e) {
       await Haptic.heavy();
       setState(() {
-        _errorMessage =
-            getApiErrorMessage(e, fallback: '비밀번호 변경에 실패했습니다.');
+        _errorMessage = getApiErrorMessage(e, fallback: '비밀번호 변경에 실패했습니다.');
       });
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -132,10 +130,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     return Scaffold(
       appBar: isIOS
           ? null
-          : AppBar(
-              title: const Text('비밀번호 변경'),
-              centerTitle: true,
-            ),
+          : AppBar(title: const Text('비밀번호 변경'), centerTitle: true),
       body: isIOS
           ? CupertinoPageScaffold(
               navigationBar: const CupertinoNavigationBar(
@@ -217,10 +212,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
                 isLoading: _isLoading,
                 child: const Text(
                   '변경하기',
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                 ),
               ),
             ],

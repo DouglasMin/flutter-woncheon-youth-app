@@ -90,9 +90,9 @@ class PrayerFilterBar extends ConsumerWidget {
         builder: (context, child) {
           return Theme(
             data: Theme.of(context).copyWith(
-              colorScheme: Theme.of(context).colorScheme.copyWith(
-                    primary: AppColors.primaryDark,
-                  ),
+              colorScheme: Theme.of(
+                context,
+              ).colorScheme.copyWith(primary: AppColors.primaryDark),
             ),
             child: child!,
           );
@@ -115,8 +115,8 @@ class PrayerFilterBar extends ConsumerWidget {
     DateTimeRange initial,
     DateTime now,
   ) async {
-    var start = initial.start;
-    var end = initial.end;
+    final start = initial.start;
+    final end = initial.end;
 
     await showCupertinoModalPopup<void>(
       context: context,
@@ -153,8 +153,9 @@ class PrayerFilterBar extends ConsumerWidget {
                         ),
                         CupertinoButton(
                           onPressed: () {
-                            ref.read(prayerFilterProvider.notifier).state =
-                                PrayerFilter(
+                            ref
+                                .read(prayerFilterProvider.notifier)
+                                .state = PrayerFilter(
                               preset: PrayerFilterPreset.custom,
                               customStart: pickedStart,
                               customEnd: pickedEnd,

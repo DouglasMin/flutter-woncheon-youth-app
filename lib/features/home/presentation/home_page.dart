@@ -69,14 +69,14 @@ class HomePage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Positioned(
+                    const Positioned(
                       left: 24,
                       right: 24,
                       bottom: 22,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             '함께 기도하는\n원천청년부',
                             style: TextStyle(
                               fontSize: 24,
@@ -86,7 +86,7 @@ class HomePage extends StatelessWidget {
                               letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          SizedBox(height: 6),
                           Text(
                             '오늘도 서로를 위해 기도해요',
                             style: TextStyle(
@@ -226,10 +226,7 @@ class _ImageMenuCard extends StatelessWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
-            Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-            ),
+            Image.asset(imagePath, fit: BoxFit.cover),
             // Dark overlay for text readability
             DecoratedBox(
               decoration: BoxDecoration(

@@ -48,7 +48,10 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
     try {
       if (kMockMode) {
         final mockRepo = ref.read(mockPrayerRepositoryProvider);
-        await mockRepo.createPrayer(content: content, isAnonymous: _isAnonymous);
+        await mockRepo.createPrayer(
+          content: content,
+          isAnonymous: _isAnonymous,
+        );
       } else {
         final repo = ref.read(prayerRepositoryProvider);
         await repo.createPrayer(content: content, isAnonymous: _isAnonymous);
@@ -80,7 +83,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
           padding: EdgeInsets.zero,
           child: _isLoading
               ? const CupertinoActivityIndicator()
-              : Text(
+              : const Text(
                   '등록',
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
@@ -145,9 +148,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: theme.dividerColor.withAlpha(50),
-                ),
+                top: BorderSide(color: theme.dividerColor.withAlpha(50)),
               ),
             ),
             child: Row(
@@ -169,10 +170,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
                     },
                   ),
                 const SizedBox(width: 8),
-                Text(
-                  '익명으로 작성',
-                  style: theme.textTheme.bodyMedium,
-                ),
+                Text('익명으로 작성', style: theme.textTheme.bodyMedium),
                 const Spacer(),
                 Text(
                   '$charCount/$maxLen',
@@ -206,10 +204,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('중보기도 작성'),
-        actions: appBarActions,
-      ),
+      appBar: AppBar(title: const Text('중보기도 작성'), actions: appBarActions),
       body: body,
     );
   }

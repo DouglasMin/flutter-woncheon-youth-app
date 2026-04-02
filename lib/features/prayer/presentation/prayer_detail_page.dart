@@ -52,15 +52,11 @@ class PrayerDetailPage extends ConsumerWidget {
             const SizedBox(height: 16),
             const Text(
               '오류가 발생했습니다',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () =>
-                  ref.invalidate(prayerDetailProvider(prayerId)),
+              onPressed: () => ref.invalidate(prayerDetailProvider(prayerId)),
               child: const Text('다시 시도'),
             ),
           ],
@@ -71,8 +67,7 @@ class PrayerDetailPage extends ConsumerWidget {
         final dateStr = date != null
             ? DateFormat('yyyy.M.d (E) HH:mm', 'ko').format(date.toLocal())
             : '';
-        final initial =
-            prayer.authorName.isEmpty ? '?' : prayer.authorName[0];
+        final initial = prayer.authorName.isEmpty ? '?' : prayer.authorName[0];
         final avatarColors = prayer.isAnonymous
             ? [AppColors.textTertiary, const Color(0xFFB0B8C4)]
             : [AppColors.primaryDark, AppColors.primary];
@@ -142,7 +137,7 @@ class PrayerDetailPage extends ConsumerWidget {
                     ),
                     if (prayer.isMine)
                       IconButton(
-                        icon: Icon(
+                        icon: const Icon(
                           FluentIcons.delete_24_regular,
                           color: AppColors.error,
                           size: 20,
@@ -240,9 +235,9 @@ class PrayerDetailPage extends ConsumerWidget {
       if (context.mounted) context.pop();
     } on DioException {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('삭제에 실패했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('삭제에 실패했습니다.')));
       }
     }
   }

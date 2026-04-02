@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -41,13 +40,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
       parent: _fadeController,
       curve: Curves.easeOutCubic,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.08),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
+          CurvedAnimation(parent: _fadeController, curve: Curves.easeOutCubic),
+        );
     _fadeController.forward();
   }
 
@@ -116,10 +112,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFECECEA),
-              AppColors.surface,
-            ],
+            colors: [Color(0xFFECECEA), AppColors.surface],
           ),
         ),
         child: SafeArea(
@@ -181,8 +174,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                               placeholder: '이름',
                               textInputAction: TextInputAction.next,
                               focusNode: _nameFocus,
-                              onSubmitted: (_) =>
-                                  _passwordFocus.requestFocus(),
+                              onSubmitted: (_) => _passwordFocus.requestFocus(),
                             ),
                             const SizedBox(height: 14),
                             AdaptiveTextField(
@@ -207,8 +199,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.error.withAlpha(15),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
                                         ),
                                         child: Text(
                                           _errorMessage!,
