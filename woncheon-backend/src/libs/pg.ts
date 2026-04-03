@@ -12,8 +12,13 @@ export function getPool(): Pool {
       user: requireEnv('PG_USER'),
       password: requireEnv('PG_PASSWORD'),
       ssl: { rejectUnauthorized: false },
-      max: 3, // Lambda 환경에서 커넥션 최소화
+      max: 3,
       idleTimeoutMillis: 10000,
+    });
+
+    // 모든 커넥션에서 KST timezone 사용
+    pool.on('connect', (client) => {
+      client.query("SET timezone = 'Asia/Seoul'");
     });
   }
   return pool;
