@@ -12,7 +12,7 @@ export const BASE_URL =
 // ─── Account definitions ──────────────────────────────────────────────────────
 
 /** 김지현: 목자 — owns a group in PostgreSQL */
-export const LEADER_ACCOUNT = { name: '김지현', password: 'woncheon2025' };
+export const LEADER_ACCOUNT = { name: '김지현', password: '11111111' };
 
 /** 민동익: 목원 — not a leader */
 export const MEMBER_ACCOUNT = { name: '민동익', password: '11111111' };

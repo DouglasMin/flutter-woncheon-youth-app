@@ -6,6 +6,7 @@ import { getMemberId, UNAUTHORIZED_RESPONSE } from '../../libs/auth-context.js';
 // GET /attendance/my-group — 내 목장 멤버 목록 (목자 전용)
 export const handler: APIGatewayProxyHandler = async (event) => {
   const memberId = getMemberId(event);
+  console.log('[myGroup] memberId from JWT:', memberId);
   if (!memberId) return UNAUTHORIZED_RESPONSE;
 
   const pool = getPool();
@@ -16,6 +17,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     [memberId],
   );
 
+  console.log('[myGroup] query result rows:', groupResult.rows.length);
   if (groupResult.rows.length === 0) {
     return error('NOT_LEADER', '목자 권한이 없습니다.', 403);
   }

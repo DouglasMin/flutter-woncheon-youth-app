@@ -23,6 +23,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const pool = getPool();
 
+  // 서버에서 KST 기준 날짜 검증
+  const validationResult = await pool.query(
+    `SELECT
+       EXTRACT(DOW FROM $1::date)::int AS date_dow,
+       $1::date > CURRENT_DATE AS is_future,
+       $1::date < (CURRENT_DATE - INTERVAL '28 days')::date AS is_too_old`,
+    [date],
+  );
+
+  const { date_dow, is_future, is_too_old } = validationResult.rows[0];
+
+  if (Number(date_dow) !== 0) {
+    return error('VALIDATION_ERROR', '일요일 날짜만 가능합니다.', 400);
+  }
+  if (is_future) {
+    return error('VALIDATION_ERROR', '미래 날짜에는 출석을 기록할 수 없습니다.', 400);
+  }
+  if (is_too_old) {
+    return error('VALIDATION_ERROR', '4주 이전의 출석은 수정할 수 없습니다.', 400);
+  }
+
   // 이 사용자가 목자인지 확인
   const groupResult = await pool.query(
     'SELECT id FROM groups WHERE leader_member_id = $1',
@@ -78,5 +99,5 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     client.release();
   }
 
-  return success({ message: '출석이 저장되었습니다.', count: records.length });
+  return success({ message: '출석이 저장되었습니다.', count: records.length, date });
 };
