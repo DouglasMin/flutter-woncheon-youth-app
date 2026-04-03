@@ -13,6 +13,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return error('VALIDATION_ERROR', 'date 파라미터가 필요합니다.', 400);
   }
 
+  // 일요일 검증
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime()) || parsed.getUTCDay() !== 0) {
+    return error('VALIDATION_ERROR', '일요일 날짜만 가능합니다.', 400);
+  }
+
   const pool = getPool();
 
   // 내 목장 조회
@@ -27,7 +33,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const group = groupResult.rows[0];
 
-  // 해당 날짜의 출석 현황
+  // 해당 날짜의 출석 현황 (모든 멤버 표시, 미체크는 false)
   const result = await pool.query(
     `SELECT
        gm.member_id,
@@ -37,6 +43,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
      FROM group_members gm
      LEFT JOIN attendance a
        ON gm.member_id = a.member_id
+       AND a.group_id = gm.group_id
        AND a.attendance_date = $2
      WHERE gm.group_id = $1
      ORDER BY gm.member_name`,

@@ -17,7 +17,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     records?: Array<{ memberId: string; isPresent: boolean }>;
   };
 
-  if (!date || !records || !Array.isArray(records)) {
+  if (!date || !records || !Array.isArray(records) || records.length === 0) {
     return error('VALIDATION_ERROR', 'date와 records가 필요합니다.', 400);
   }
 
@@ -35,15 +35,47 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const groupId = groupResult.rows[0].id;
 
-  // 해당 목장 멤버인지 확인 후 출석 기록 upsert
-  for (const record of records) {
-    await pool.query(
-      `INSERT INTO attendance (group_id, member_id, attendance_date, is_present, checked_by)
-       VALUES ($1, $2, $3, $4, $5)
-       ON CONFLICT (member_id, attendance_date)
-       DO UPDATE SET is_present = $4, checked_by = $5, updated_at = NOW()`,
-      [groupId, record.memberId, date, record.isPresent, memberId],
+  // 제출된 memberId가 이 목장 소속인지 검증
+  const submittedIds = records.map((r) => r.memberId);
+  const memberCheck = await pool.query(
+    `SELECT member_id FROM group_members
+     WHERE group_id = $1 AND member_id = ANY($2::text[])`,
+    [groupId, submittedIds],
+  );
+  const validIds = new Set(memberCheck.rows.map((r) => r.member_id as string));
+  const invalidIds = submittedIds.filter((id) => !validIds.has(id));
+
+  if (invalidIds.length > 0) {
+    return error(
+      'VALIDATION_ERROR',
+      `이 목장에 속하지 않는 멤버가 포함되어 있습니다: ${invalidIds.join(', ')}`,
+      400,
     );
+  }
+
+  // 트랜잭션으로 배치 upsert
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const memberIds = records.map((r) => r.memberId);
+    const presents = records.map((r) => r.isPresent);
+
+    await client.query(
+      `INSERT INTO attendance (group_id, member_id, attendance_date, is_present, checked_by)
+       SELECT $1, unnest($2::text[]), $3::date, unnest($4::boolean[]), $5
+       ON CONFLICT (group_id, member_id, attendance_date)
+       DO UPDATE SET is_present = EXCLUDED.is_present,
+                     checked_by = EXCLUDED.checked_by`,
+      [groupId, memberIds, date, presents, memberId],
+    );
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 
   return success({ message: '출석이 저장되었습니다.', count: records.length });
