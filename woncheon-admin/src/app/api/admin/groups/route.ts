@@ -10,20 +10,19 @@ export async function GET() {
          g.id,
          g.name,
          g.leader_member_id,
-         COUNT(gm.member_id)::int AS member_count,
+         (SELECT COUNT(*)::int FROM group_members WHERE group_id = g.id) AS member_count,
          COALESCE(
-           ROUND(
+           (SELECT ROUND(
              COUNT(CASE WHEN a.is_present THEN 1 END)::numeric
-             / NULLIF(COUNT(a.id), 0) * 100, 1
+             / NULLIF(COUNT(*)::numeric, 0) * 100, 1
+           )
+           FROM attendance a
+           JOIN group_members gm ON a.member_id = gm.member_id AND a.group_id = gm.group_id
+           WHERE a.group_id = g.id
+             AND a.attendance_date >= CURRENT_DATE - INTERVAL '1 month'
            ), 0
          ) AS attendance_rate
        FROM groups g
-       LEFT JOIN group_members gm ON g.id = gm.group_id
-       LEFT JOIN attendance a
-         ON gm.member_id = a.member_id
-         AND a.group_id = g.id
-         AND a.attendance_date >= CURRENT_DATE - INTERVAL '1 month'
-       GROUP BY g.id, g.name, g.leader_member_id
        ORDER BY g.name`
     );
 
