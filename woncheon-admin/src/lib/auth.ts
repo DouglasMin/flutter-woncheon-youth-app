@@ -1,27 +1,39 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import bcrypt from "bcryptjs";
 
 const COOKIE_NAME = "admin-session";
-const secret = new TextEncoder().encode(process.env.ADMIN_SECRET ?? "fallback-secret");
 
-// Hash the admin password at startup for comparison
-let hashedPassword: string | null = null;
-
-async function getHashedPassword(): Promise<string> {
-  if (!hashedPassword) {
-    hashedPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD ?? "", 10);
+function getSecret(): Uint8Array {
+  const adminSecret = process.env.ADMIN_SECRET;
+  if (!adminSecret) {
+    throw new Error("ADMIN_SECRET environment variable is required");
   }
-  return hashedPassword;
+  return new TextEncoder().encode(adminSecret);
 }
 
 export async function verifyCredentials(id: string, password: string): Promise<boolean> {
-  const adminId = process.env.ADMIN_ID ?? "admin";
-  if (id !== adminId) return false;
+  const adminId = process.env.ADMIN_ID;
+  const adminPassword = process.env.ADMIN_PASSWORD;
 
-  // Compare with env password directly (bcrypt for timing-safe comparison)
-  const envPassword = process.env.ADMIN_PASSWORD ?? "";
-  return password === envPassword;
+  if (!adminId || !adminPassword) {
+    throw new Error("ADMIN_ID and ADMIN_PASSWORD environment variables are required");
+  }
+
+  // Timing-safe comparison (constant time via length check + char-by-char)
+  if (id.length !== adminId.length || password.length !== adminPassword.length) {
+    return false;
+  }
+
+  let idMatch = true;
+  let pwMatch = true;
+  for (let i = 0; i < adminId.length; i++) {
+    if (id[i] !== adminId[i]) idMatch = false;
+  }
+  for (let i = 0; i < adminPassword.length; i++) {
+    if (password[i] !== adminPassword[i]) pwMatch = false;
+  }
+
+  return idMatch && pwMatch;
 }
 
 export async function createSession(): Promise<string> {
@@ -29,13 +41,13 @@ export async function createSession(): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("24h")
     .setIssuedAt()
-    .sign(secret);
+    .sign(getSecret());
   return token;
 }
 
 export async function verifySession(token: string): Promise<boolean> {
   try {
-    await jwtVerify(token, secret);
+    await jwtVerify(token, getSecret());
     return true;
   } catch {
     return false;
