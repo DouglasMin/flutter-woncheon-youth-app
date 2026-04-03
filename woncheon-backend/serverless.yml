@@ -14,6 +14,11 @@ provider:
     JWT_REFRESH_SECRET: ${ssm:/woncheon/${sls:stage}/jwt-refresh-secret}
     SNS_IOS_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-ios-arn, ''}
     SNS_ANDROID_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-android-arn, ''}
+    PG_HOST: ${ssm:/woncheon/${sls:stage}/pg-host, ''}
+    PG_PORT: ${ssm:/woncheon/${sls:stage}/pg-port, '5432'}
+    PG_DATABASE: ${ssm:/woncheon/${sls:stage}/pg-database, 'woncheon'}
+    PG_USER: ${ssm:/woncheon/${sls:stage}/pg-user, ''}
+    PG_PASSWORD: ${ssm:/woncheon/${sls:stage}/pg-password, ''}
   iam:
     role:
       statements:
@@ -221,6 +226,59 @@ functions:
       - http:
           path: /prayers/{prayerId}/reaction
           method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  # ── Attendance ──────────────────────────────
+  attendanceMyGroup:
+    handler: src/functions/attendance/myGroup.handler
+    events:
+      - http:
+          path: /attendance/my-group
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  attendanceCheck:
+    handler: src/functions/attendance/check.handler
+    events:
+      - http:
+          path: /attendance/check
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  attendanceWeekly:
+    handler: src/functions/attendance/weekly.handler
+    events:
+      - http:
+          path: /attendance/weekly
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  attendanceStats:
+    handler: src/functions/attendance/stats.handler
+    events:
+      - http:
+          path: /attendance/stats
+          method: get
           cors: true
           authorizer:
             name: jwtAuthorizer
