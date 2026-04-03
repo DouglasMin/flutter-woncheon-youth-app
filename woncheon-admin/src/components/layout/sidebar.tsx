@@ -36,9 +36,7 @@ export function Sidebar() {
     <aside className="hidden md:flex w-64 flex-col border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 h-screen sticky top-0">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-5 border-b border-slate-100 dark:border-slate-800">
-        <div className="w-9 h-9 rounded-xl bg-slate-900 dark:bg-slate-100 flex items-center justify-center">
-          <Church className="w-5 h-5 text-white dark:text-slate-900" />
-        </div>
+        <img src="/logo.png" alt="원천청년부" className="w-9 h-9 rounded-xl" />
         <div>
           <p className="font-bold text-sm leading-tight">원천청년부</p>
           <p className="text-[11px] text-slate-400">관리자 패널</p>

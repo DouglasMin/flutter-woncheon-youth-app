@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET;
-if (!ADMIN_SECRET) {
-  throw new Error("ADMIN_SECRET environment variable is required");
+function getSecret(): Uint8Array {
+  const s = process.env.ADMIN_SECRET;
+  if (!s) throw new Error("ADMIN_SECRET environment variable is required");
+  return new TextEncoder().encode(s);
 }
-const secret = new TextEncoder().encode(ADMIN_SECRET);
 const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/auth/logout"];
 
 export async function middleware(request: NextRequest) {
@@ -24,7 +24,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    await jwtVerify(token, secret);
+    await jwtVerify(token, getSecret());
     return NextResponse.next();
   } catch {
     return NextResponse.redirect(new URL("/login", request.url));
