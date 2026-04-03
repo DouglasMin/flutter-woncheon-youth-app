@@ -7,4 +7,8 @@ export const docClient = DynamoDBDocumentClient.from(client, {
   marshallOptions: { removeUndefinedValues: true },
 });
 
-export const TABLE_NAME = process.env.DYNAMO_TABLE_NAME ?? "woncheon-dev";
+const tableName = process.env.DYNAMO_TABLE_NAME;
+if (!tableName) {
+  throw new Error("DYNAMO_TABLE_NAME environment variable is required");
+}
+export const TABLE_NAME = tableName;
