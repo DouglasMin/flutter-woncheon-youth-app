@@ -15,4 +15,10 @@ abstract final class Endpoints {
       '/prayers/$prayerId/comments/$commentId';
   // Also used for PUT (update) and DELETE
   static String reaction(String prayerId) => '/prayers/$prayerId/reaction';
+
+  // Attendance
+  static const String attendanceMyGroup = '/attendance/my-group';
+  static const String attendanceCheck = '/attendance/check';
+  static const String attendanceWeekly = '/attendance/weekly';
+  static const String attendanceStats = '/attendance/stats';
 }

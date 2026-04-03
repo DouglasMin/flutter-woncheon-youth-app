@@ -55,6 +55,11 @@ woncheon-backend/.serverless/
 woncheon-backend/.esbuild/
 woncheon-backend/pnpm-lock.yaml
 
+# Admin
+woncheon-admin/node_modules/
+woncheon-admin/.next/
+woncheon-admin/pnpm-lock.yaml
+
 # Generated code
 *.freezed.dart
 *.g.dart

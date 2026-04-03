@@ -163,10 +163,26 @@ class HomePage extends ConsumerWidget {
                   _MenuCard(
                     icon: FluentIcons.checkmark_circle_24_filled,
                     label: '출결',
-                    subtitle: '준비 중',
-                    enabled: false,
-                    iconColor: const Color(0xFF9CA3AF),
-                    onTap: () => _showComingSoon(context),
+                    subtitle: '출석 체크',
+                    enabled: true,
+                    iconColor: const Color(0xFF38A169),
+                    onTap: () {
+                      Haptic.light();
+                      if (DateTime.now().weekday != DateTime.sunday) {
+                        showAdaptiveConfirmDialog(
+                          context,
+                          title: '출석 체크',
+                          content: '출석 체크는 주일(일요일)에만 가능합니다.\n그래도 이전 주차 출석을 확인하시겠습니까?',
+                          confirmText: '확인하기',
+                        ).then((confirmed) {
+                          if (confirmed == true && context.mounted) {
+                            context.push(AppRoutes.attendanceCheck);
+                          }
+                        });
+                        return;
+                      }
+                      context.push(AppRoutes.attendanceCheck);
+                    },
                   ),
                   _MenuCard(
                     icon: FluentIcons.music_note_2_24_filled,

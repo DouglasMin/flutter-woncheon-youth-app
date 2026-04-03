@@ -1,0 +1,59 @@
+import { NextResponse } from "next/server";
+import { ScanCommand } from "@aws-sdk/lib-dynamodb";
+import { docClient, TABLE_NAME } from "@/lib/db/dynamo";
+import { getPool } from "@/lib/db/pg";
+
+export async function GET() {
+  try {
+    // DynamoDB: member count
+    const memberScan = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: "SK = :sk AND begins_with(PK, :pk)",
+        ExpressionAttributeValues: {
+          ":sk": "#META",
+          ":pk": "MEMBER#",
+        },
+        Select: "COUNT",
+      })
+    );
+
+    // DynamoDB: prayer count
+    const prayerScan = await docClient.send(
+      new ScanCommand({
+        TableName: TABLE_NAME,
+        FilterExpression: "SK = :sk AND begins_with(PK, :pk)",
+        ExpressionAttributeValues: {
+          ":sk": "#META",
+          ":pk": "PRAYER#",
+        },
+        Select: "COUNT",
+      })
+    );
+
+    // PostgreSQL: group count + monthly attendance rate
+    const pool = getPool();
+    const groupCount = await pool.query("SELECT COUNT(*) FROM groups");
+    const attendanceRate = await pool.query(
+      `SELECT
+         CASE WHEN COUNT(*) > 0
+           THEN ROUND(COUNT(CASE WHEN is_present THEN 1 END)::numeric / COUNT(*)::numeric * 100, 1)
+           ELSE 0
+         END AS rate
+       FROM attendance
+       WHERE attendance_date >= DATE_TRUNC('month', CURRENT_DATE)`
+    );
+
+    return NextResponse.json({
+      memberCount: memberScan.Count ?? 0,
+      prayerCount: prayerScan.Count ?? 0,
+      groupCount: Number(groupCount.rows[0].count),
+      monthlyAttendanceRate: Number(attendanceRate.rows[0].rate),
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "통계를 불러올 수 없습니다." },
+      { status: 500 }
+    );
+  }
+}

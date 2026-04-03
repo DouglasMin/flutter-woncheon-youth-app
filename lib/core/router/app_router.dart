@@ -5,6 +5,8 @@ import 'package:woncheon_youth/features/auth/presentation/login_page.dart';
 import 'package:woncheon_youth/features/home/presentation/home_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_create_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_detail_page.dart';
+import 'package:woncheon_youth/features/attendance/presentation/attendance_check_page.dart';
+import 'package:woncheon_youth/features/attendance/presentation/attendance_stats_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_list_page.dart';
 import 'package:woncheon_youth/features/splash/presentation/splash_page.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
@@ -17,6 +19,8 @@ abstract final class AppRoutes {
   static const prayerList = '/prayers';
   static const prayerCreate = '/prayers/create';
   static String prayerDetail(String id) => '/prayers/$id';
+  static const attendanceCheck = '/attendance';
+  static const attendanceStats = '/attendance/stats';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -71,6 +75,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           final prayerId = state.pathParameters['prayerId']!;
           return PrayerDetailPage(prayerId: prayerId);
         },
+      ),
+      GoRoute(
+        path: AppRoutes.attendanceCheck,
+        builder: (context, state) => const AttendanceCheckPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.attendanceStats,
+        builder: (context, state) => const AttendanceStatsPage(),
       ),
     ],
   );
