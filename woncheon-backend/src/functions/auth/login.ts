@@ -7,7 +7,40 @@ import { success, error } from '../../libs/response.js';
 import { parseBody, INVALID_BODY_RESPONSE } from '../../libs/parse-body.js';
 import type { Member } from '../../types/member.js';
 
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX_ATTEMPTS = 5;
+const loginAttempts = new Map<string, number[]>();
+
+function getClientIp(event: Parameters<APIGatewayProxyHandler>[0]): string {
+  return (
+    event.requestContext.identity?.sourceIp ??
+    event.headers['x-forwarded-for']?.split(',')[0]?.trim() ??
+    'unknown'
+  );
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const attempts = (loginAttempts.get(ip) ?? []).filter(
+    (timestamp) => now - timestamp < RATE_LIMIT_WINDOW_MS,
+  );
+
+  if (attempts.length >= RATE_LIMIT_MAX_ATTEMPTS) {
+    loginAttempts.set(ip, attempts);
+    return true;
+  }
+
+  attempts.push(now);
+  loginAttempts.set(ip, attempts);
+  return false;
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
+  const clientIp = getClientIp(event);
+  if (isRateLimited(clientIp)) {
+    return error('RATE_LIMITED', '잠시 후 다시 시도해주세요.', 429);
+  }
+
   const body = parseBody(event.body);
   if (!body) return INVALID_BODY_RESPONSE;
 
