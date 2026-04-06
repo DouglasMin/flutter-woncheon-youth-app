@@ -71,12 +71,11 @@ class _TokenRefreshInterceptor extends QueuedInterceptor {
 
     try {
       // Use a separate Dio instance to avoid interceptor recursion
-      final response = await Dio(
-        BaseOptions(baseUrl: AppConstants.apiBaseUrl),
-      ).post<Map<String, dynamic>>(
-        Endpoints.refresh,
-        data: {'refreshToken': refreshToken},
-      );
+      final response = await Dio(BaseOptions(baseUrl: AppConstants.apiBaseUrl))
+          .post<Map<String, dynamic>>(
+            Endpoints.refresh,
+            data: {'refreshToken': refreshToken},
+          );
 
       final data = response.data?['data'] as Map<String, dynamic>?;
       if (data == null) return false;
@@ -95,10 +94,7 @@ class _TokenRefreshInterceptor extends QueuedInterceptor {
     final token = await _storage.getAccessToken();
     final options = Options(
       method: requestOptions.method,
-      headers: {
-        ...requestOptions.headers,
-        'Authorization': 'Bearer $token',
-      },
+      headers: {...requestOptions.headers, 'Authorization': 'Bearer $token'},
     );
     return _dio.request<dynamic>(
       requestOptions.path,

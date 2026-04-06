@@ -65,6 +65,9 @@ woncheon-admin/pnpm-lock.yaml
 *.g.dart
 lib/l10n/app_localizations*.dart
 
+# DB dumps
+*.dump
+
 # Env / Secrets
 .env
 .env.*
