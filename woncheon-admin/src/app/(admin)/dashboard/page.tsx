@@ -17,19 +17,22 @@ export default function DashboardPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/stats")
+    fetch("/api/admin/stats", { credentials: "include" })
       .then((res) => {
-        if (!res.ok) throw new Error("Failed");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((data) => setStats(data))
+      .then((data) => {
+        setStats(data);
+        setError(false);
+      })
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
   const cards = [
     {
-      title: "전체 회원",
+      title: "전체 교적 인원",
       value: stats?.memberCount ?? 0,
       suffix: "명",
       icon: Users,

@@ -59,8 +59,10 @@ export default function AttendancePage() {
 
   if (!data) return null;
 
-  // Show last 8 Sundays
-  const recentDates = data.dates.slice(-8);
+  // Filter to dates up to today, then take last 8 Sundays
+  const today = new Date().toISOString().split("T")[0];
+  const pastDates = data.dates.filter((d) => d <= today);
+  const recentDates = pastDates.slice(-8);
 
   return (
     <div className="space-y-6">
