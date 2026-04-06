@@ -37,6 +37,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       Item: {
         PK: `REPORT#${reportId}`,
         SK: '#META',
+        GSI2PK: 'REPORT_LIST',
+        GSI2SK: `${memberId}#${createdAt}#${reportId}`,
         reportId,
         reporterMemberId: memberId,
         targetType,
