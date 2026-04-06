@@ -3,6 +3,12 @@ import { requireEnv } from './env.js';
 
 let pool: Pool | null = null;
 
+function shouldRejectUnauthorized(): boolean {
+  const value = process.env.PG_SSL_REJECT_UNAUTHORIZED;
+  if (value == null) return true;
+  return value.toLowerCase() !== 'false';
+}
+
 export function getPool(): Pool {
   if (!pool) {
     pool = new Pool({
@@ -11,7 +17,7 @@ export function getPool(): Pool {
       database: requireEnv('PG_DATABASE'),
       user: requireEnv('PG_USER'),
       password: requireEnv('PG_PASSWORD'),
-      ssl: { rejectUnauthorized: false },
+      ssl: { rejectUnauthorized: shouldRejectUnauthorized() },
       max: 3,
       idleTimeoutMillis: 10000,
     });
