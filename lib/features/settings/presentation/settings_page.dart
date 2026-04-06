@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,6 +31,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final storage = ref.read(secureStorageServiceProvider);
     final name = await storage.getMemberName();
     if (mounted) setState(() => _memberName = name ?? '');
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    final uri = Uri.parse(
+      'https://douglasmin.github.io/flutter-woncheon-youth-app/',
+    );
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _handleLogout() async {
@@ -155,6 +163,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
           const SizedBox(height: 24),
 
           // Settings items
+          _SettingsItem(
+            icon: FluentIcons.document_text_24_regular,
+            label: '개인정보처리방침',
+            onTap: _openPrivacyPolicy,
+          ),
           _SettingsItem(
             icon: FluentIcons.sign_out_24_regular,
             label: '로그아웃',

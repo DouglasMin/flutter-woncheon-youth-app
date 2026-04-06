@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>원천청년부 앱 개인정보처리방침</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.7;
+      color: #1a202c;
+      background: #f7f7f5;
+      padding: 20px;
+    }
+    .container {
+      max-width: 720px;
+      margin: 40px auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #2d3748;
+    }
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      color: #2d3748;
+    }
+    p, li {
+      font-size: 15px;
+      color: #4a5568;
+      margin-bottom: 8px;
+    }
+    ul { padding-left: 20px; margin-bottom: 12px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 10px 14px;
+      text-align: left;
+    }
+    th { background: #f7fafc; font-weight: 600; color: #2d3748; }
+    td { color: #4a5568; }
+    .date {
+      font-size: 13px;
+      color: #a0aec0;
+      margin-bottom: 24px;
+    }
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+      font-size: 13px;
+      color: #a0aec0;
+      text-align: center;
+    }
+    hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>원천청년부 앱 개인정보처리방침</h1>
+    <p class="date">최종 수정일: 2026년 4월 6일</p>
+
+    <p>원천교회 청년부(이하 "운영자")는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고 이와 관련한 고충을 신속하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
+
+    <h2>1. 수집하는 개인정보 항목</h2>
+    <table>
+      <thead><tr><th>수집 항목</th><th>수집 목적</th><th>필수 여부</th></tr></thead>
+      <tbody>
+        <tr><td>이름</td><td>회원 식별 및 로그인</td><td>필수</td></tr>
+        <tr><td>비밀번호 (암호화 저장)</td><td>로그인 인증</td><td>필수</td></tr>
+        <tr><td>생년월일</td><td>회원 관리</td><td>선택</td></tr>
+        <tr><td>성별</td><td>회원 관리</td><td>선택</td></tr>
+        <tr><td>디바이스 토큰</td><td>푸시 알림 발송</td><td>선택</td></tr>
+      </tbody>
+    </table>
+
+    <h2>2. 개인정보의 수집 방법</h2>
+    <ul>
+      <li>앱 회원 등록 시 관리자가 이름, 생년월일, 성별을 등록</li>
+      <li>앱 최초 로그인 시 비밀번호 변경</li>
+      <li>푸시 알림 권한 동의 시 디바이스 토큰 자동 수집</li>
+    </ul>
+
+    <h2>3. 개인정보의 이용 목적</h2>
+    <ul>
+      <li>회원 인증 및 로그인 서비스 제공</li>
+      <li>중보기도 작성·조회·관리 서비스 제공</li>
+      <li>출결 관리 서비스 제공</li>
+      <li>주간 푸시 알림 발송 (중보기도 안내)</li>
+      <li>서비스 운영 및 개선</li>
+    </ul>
+
+    <h2>4. 개인정보의 보관 및 파기</h2>
+    <ul>
+      <li><strong>보관 기간:</strong> 회원 탈퇴(계정 삭제) 시까지</li>
+      <li><strong>파기 방법:</strong> 계정 삭제 요청 시 모든 개인정보 및 작성 콘텐츠를 즉시 삭제</li>
+      <li>비밀번호는 bcrypt 단방향 암호화로 저장되며, 원문 복원이 불가합니다.</li>
+    </ul>
+
+    <h2>5. 개인정보의 제3자 제공</h2>
+    <p>운영자는 이용자의 개인정보를 제3자에게 제공하지 않습니다. 단, 법령에 의한 요청이 있거나 이용자가 사전에 동의한 경우는 예외합니다.</p>
+
+    <h2>6. 개인정보의 안전성 확보 조치</h2>
+    <ul>
+      <li>비밀번호 bcrypt 암호화</li>
+      <li>JWT 기반 인증 토큰 사용</li>
+      <li>HTTPS 통신 (AWS API Gateway)</li>
+      <li>데이터베이스 접근 제어 (AWS IAM)</li>
+    </ul>
+
+    <h2>7. 이용자의 권리</h2>
+    <ul>
+      <li><strong>계정 삭제:</strong> 앱 내 설정 &gt; 계정 삭제를 통해 모든 개인정보 및 콘텐츠 삭제</li>
+      <li><strong>개인정보 열람:</strong> 앱 내 설정에서 본인 정보 확인</li>
+      <li><strong>문의:</strong> 아래 연락처를 통해 개인정보 관련 문의</li>
+    </ul>
+
+    <h2>8. 콘텐츠 신고</h2>
+    <p>이용자는 부적절한 콘텐츠를 앱 내 신고 기능을 통해 신고할 수 있으며, 운영자는 검토 후 적절한 조치를 취합니다.</p>
+
+    <h2>9. 개인정보 보호 책임자</h2>
+    <ul>
+      <li><strong>이름:</strong> 민동익</li>
+      <li><strong>소속:</strong> 원천교회 청년부</li>
+      <li><strong>이메일:</strong> dongik.min@example.com</li>
+    </ul>
+
+    <h2>10. 개인정보처리방침 변경</h2>
+    <p>이 개인정보처리방침은 시행일로부터 적용되며, 변경사항이 있을 경우 앱 공지를 통해 고지합니다.</p>
+
+    <div class="footer">
+      본 방침은 2026년 4월 6일부터 시행됩니다.
+    </div>
+  </div>
+</body>
+</html>
