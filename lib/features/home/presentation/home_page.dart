@@ -193,12 +193,15 @@ class HomePage extends ConsumerWidget {
                     onTap: () => _showComingSoon(context),
                   ),
                   _MenuCard(
-                    icon: FluentIcons.grid_24_filled,
-                    label: '더보기',
-                    subtitle: '준비 중',
-                    enabled: false,
-                    iconColor: const Color(0xFF9CA3AF),
-                    onTap: () => _showComingSoon(context),
+                    icon: FluentIcons.settings_24_filled,
+                    label: '설정',
+                    subtitle: '계정 관리',
+                    enabled: true,
+                    iconColor: const Color(0xFF6B7280),
+                    onTap: () {
+                      Haptic.light();
+                      context.push(AppRoutes.settings);
+                    },
                   ),
                 ],
               ),

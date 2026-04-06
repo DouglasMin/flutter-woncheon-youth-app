@@ -11,6 +11,7 @@ import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/report_dialog.dart';
 
 class PrayerDetailPage extends ConsumerWidget {
   const PrayerDetailPage({required this.prayerId, super.key});
@@ -146,6 +147,20 @@ class PrayerDetailPage extends ConsumerWidget {
                         ),
                         onPressed: () =>
                             _confirmDelete(context, ref, prayer.prayerId),
+                      ),
+                    if (!prayer.isMine)
+                      IconButton(
+                        icon: Icon(
+                          FluentIcons.flag_24_regular,
+                          color: context.textTertiary,
+                          size: 20,
+                        ),
+                        onPressed: () => showReportDialog(
+                          context: context,
+                          apiClient: ref.read(apiClientProvider),
+                          targetType: 'prayer',
+                          targetId: prayer.prayerId,
+                        ),
                       ),
                   ],
                 ),

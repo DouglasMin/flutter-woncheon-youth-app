@@ -8,6 +8,7 @@ import 'package:woncheon_youth/features/prayer/presentation/prayer_detail_page.d
 import 'package:woncheon_youth/features/attendance/presentation/attendance_check_page.dart';
 import 'package:woncheon_youth/features/attendance/presentation/attendance_stats_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_list_page.dart';
+import 'package:woncheon_youth/features/settings/presentation/settings_page.dart';
 import 'package:woncheon_youth/features/splash/presentation/splash_page.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 
@@ -21,6 +22,7 @@ abstract final class AppRoutes {
   static String prayerDetail(String id) => '/prayers/$id';
   static const attendanceCheck = '/attendance';
   static const attendanceStats = '/attendance/stats';
+  static const settings = '/settings';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -83,6 +85,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.attendanceStats,
         builder: (context, state) => const AttendanceStatsPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsPage(),
       ),
     ],
   );

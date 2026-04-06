@@ -101,6 +101,33 @@ functions:
             identitySource: method.request.header.Authorization
             type: request
 
+  deleteAccount:
+    handler: src/functions/auth/deleteAccount.handler
+    events:
+      - http:
+          path: /auth/account
+          method: delete
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  # ── Report ─────────────────────────────────
+  createReport:
+    handler: src/functions/report/create.handler
+    events:
+      - http:
+          path: /report
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
   # ── Prayer ──────────────────────────────────
   listPrayers:
     handler: src/functions/prayer/list.handler
