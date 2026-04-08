@@ -135,21 +135,21 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         height: 100,
                       ),
                       const SizedBox(height: 24),
-                      const Text(
+                      Text(
                         '원천청년부',
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
+                          color: context.textPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      const Text(
+                      Text(
                         '함께 기도하고, 함께 성장해요',
                         style: TextStyle(
                           fontSize: 15,
-                          color: AppColors.textSecondary,
+                          color: context.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 44),
@@ -207,7 +207,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                                         ),
                                         child: Text(
                                           _errorMessage!,
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             color: AppColors.error,
                                             fontSize: 13,
                                           ),

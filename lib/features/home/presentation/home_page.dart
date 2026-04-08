@@ -88,7 +88,7 @@ class HomePage extends ConsumerWidget {
                         children: [
                           Text(
                             '$memberName님,\n오늘도 함께 기도해요',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textOnDark,
@@ -127,12 +127,12 @@ class HomePage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  const Text(
+                  Text(
                     '메뉴',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimary,
                     ),
                   ),
                 ],
@@ -280,7 +280,7 @@ class _ImageMenuCard extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: Colors.white,
@@ -363,7 +363,7 @@ class _DarkMenuCard extends StatelessWidget {
                 const Spacer(),
                 Text(
                   label,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: Colors.white,
@@ -441,18 +441,18 @@ class _MenuCard extends StatelessWidget {
                   const Spacer(),
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
+                      color: context.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textTertiary,
+                      color: context.textTertiary,
                     ),
                   ),
                 ],

@@ -106,7 +106,7 @@ class PrayerDetailPage extends ConsumerWidget {
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -121,18 +121,18 @@ class PrayerDetailPage extends ConsumerWidget {
                         children: [
                           Text(
                             prayer.authorName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                              color: context.textPrimary,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             dateStr,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: AppColors.textTertiary,
+                              color: context.textTertiary,
                             ),
                           ),
                         ],
@@ -625,7 +625,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                           backgroundColor: AppColors.primaryDark,
                           child: Text(
                             c.authorName.isEmpty ? '?' : c.authorName[0],
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               color: Colors.white,
                               fontWeight: FontWeight.w600,

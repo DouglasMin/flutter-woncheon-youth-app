@@ -37,9 +37,9 @@ class PrayerFilterBar extends ConsumerWidget {
               child: Center(
                 child: Text(
                   _formatRange(filter.customStart!, filter.customEnd),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondary,
                   ),
                 ),
               ),

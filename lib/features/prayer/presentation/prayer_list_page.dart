@@ -184,12 +184,12 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
             ),
           ),
           const SizedBox(height: 16),
-          const Text(
+          Text(
             '오류가 발생했습니다',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
-              color: AppColors.textPrimary,
+              color: context.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -221,20 +221,20 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             '아직 올라온 기도가 없어요',
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              color: context.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             '첫 번째로 나눠주세요',
             style: TextStyle(
               fontSize: 14,
-              color: AppColors.textTertiary,
+              color: context.textTertiary,
             ),
           ),
         ],
@@ -381,7 +381,7 @@ class _PrayerCard extends StatelessWidget {
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -392,10 +392,10 @@ class _PrayerCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Text(
                       authorName,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                        color: context.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -407,23 +407,23 @@ class _PrayerCard extends StatelessWidget {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withAlpha(20),
+                          color: context.textTertiary.withAlpha(20),
                           borderRadius: BorderRadius.circular(4),
                         ),
-                        child: const Text(
+                        child: Text(
                           '읽음',
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w500,
-                            color: AppColors.textTertiary,
+                            color: context.textTertiary,
                           ),
                         ),
                       ),
                     Text(
                       dateStr,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: AppColors.textTertiary,
+                        color: context.textTertiary,
                       ),
                     ),
                   ],
@@ -433,10 +433,10 @@ class _PrayerCard extends StatelessWidget {
                   contentPreview,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
                     height: 1.5,
-                    color: AppColors.textSecondary,
+                    color: context.textSecondary,
                   ),
                 ),
               ],
@@ -508,7 +508,7 @@ class _PrayerCardCompact extends StatelessWidget {
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -556,7 +556,7 @@ class _PrayerCardCompact extends StatelessWidget {
                           vertical: 1,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.textTertiary.withAlpha(20),
+                          color: context.textTertiary.withAlpha(20),
                           borderRadius: BorderRadius.circular(3),
                         ),
                         child: Text(
