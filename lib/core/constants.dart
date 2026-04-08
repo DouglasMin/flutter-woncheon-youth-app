@@ -23,5 +23,5 @@ abstract final class AppConstants {
 
   // Prayer
   static const int maxPrayerContentLength = 500;
-  static const int contentPreviewLength = 100;
+  static const int contentPreviewLength = 200;
 }

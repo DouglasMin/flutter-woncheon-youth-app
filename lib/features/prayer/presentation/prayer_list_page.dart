@@ -431,7 +431,7 @@ class _PrayerCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   contentPreview,
-                  maxLines: 2,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 14,

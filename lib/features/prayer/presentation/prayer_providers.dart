@@ -37,7 +37,7 @@ final readPrayerIdsProvider = FutureProvider<Set<String>>((ref) async {
 
 // Comments
 final commentsProvider =
-    FutureProvider.family<List<CommentItem>, String>((ref, prayerId) async {
+    FutureProvider.autoDispose.family<List<CommentItem>, String>((ref, prayerId) async {
   if (kMockMode) return [];
   final repo = ref.watch(prayerRepositoryProvider);
   return repo.getComments(prayerId);
@@ -75,7 +75,7 @@ class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
 }
 
 final prayerDetailProvider =
-    FutureProvider.family<PrayerDetail, String>((ref, prayerId) async {
+    FutureProvider.autoDispose.family<PrayerDetail, String>((ref, prayerId) async {
   if (kMockMode) {
     final mockRepo = ref.watch(mockPrayerRepositoryProvider);
     return mockRepo.getPrayer(prayerId);

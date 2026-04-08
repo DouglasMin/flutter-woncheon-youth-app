@@ -12,4 +12,4 @@ class AuthEventBus {
   void emit(AuthEvent event) => _controller.add(event);
 }
 
-enum AuthEvent { forceLogout }
+enum AuthEvent { forceLogout, logout }

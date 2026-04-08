@@ -184,20 +184,17 @@ class HomePage extends ConsumerWidget {
                       context.push(AppRoutes.attendanceCheck);
                     },
                   ),
-                  _MenuCard(
-                    icon: FluentIcons.music_note_2_24_filled,
+                  _ImageMenuCard(
+                    imagePath: 'assets/images/song-list-bg.png',
                     label: '송리스트',
                     subtitle: '준비 중',
                     enabled: false,
-                    iconColor: const Color(0xFF9CA3AF),
                     onTap: () => _showComingSoon(context),
                   ),
-                  _MenuCard(
+                  _DarkMenuCard(
                     icon: FluentIcons.settings_24_filled,
                     label: '설정',
                     subtitle: '계정 관리',
-                    enabled: true,
-                    iconColor: const Color(0xFF6B7280),
                     onTap: () {
                       Haptic.light();
                       context.push(AppRoutes.settings);
@@ -230,16 +227,21 @@ class _ImageMenuCard extends StatelessWidget {
     required this.label,
     required this.subtitle,
     required this.onTap,
+    this.enabled = true,
   });
 
   final String imagePath;
   final String label;
   final String subtitle;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      opacity: enabled ? 1.0 : 0.45,
+      child: Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
@@ -300,12 +302,84 @@ class _ImageMenuCard extends StatelessWidget {
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  onTap: onTap,
+                  onTap: enabled ? onTap : null,
                   borderRadius: BorderRadius.circular(22),
                 ),
               ),
             ),
           ],
+        ),
+      ),
+    ),
+    );
+  }
+}
+
+class _DarkMenuCard extends StatelessWidget {
+  const _DarkMenuCard({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.primaryDark,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withAlpha(30),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withAlpha(25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, size: 22, color: Colors.white),
+                ),
+                const Spacer(),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withAlpha(150),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

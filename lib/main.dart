@@ -38,10 +38,47 @@ void main() {
       return true;
     };
 
-    runApp(const ProviderScope(child: WoncheonYouthApp()));
+    runApp(const AppRoot());
   }, (error, stack) {
     debugPrint('Unhandled zone error: $error\n$stack');
   });
+}
+
+/// Root widget that rebuilds ProviderScope on logout to clear all cached state.
+class AppRoot extends StatefulWidget {
+  const AppRoot({super.key});
+
+  @override
+  State<AppRoot> createState() => _AppRootState();
+}
+
+class _AppRootState extends State<AppRoot> {
+  int _sessionKey = 0;
+  StreamSubscription<AuthEvent>? _logoutSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _logoutSub = AuthEventBus.instance.stream.listen((event) {
+      if (event == AuthEvent.logout || event == AuthEvent.forceLogout) {
+        setState(() => _sessionKey++);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _logoutSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ProviderScope(
+      key: ValueKey(_sessionKey),
+      child: const WoncheonYouthApp(),
+    );
+  }
 }
 
 class WoncheonYouthApp extends ConsumerStatefulWidget {

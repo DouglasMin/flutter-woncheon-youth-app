@@ -64,8 +64,8 @@ class MockPrayerRepository {
 
     return PrayerListResponse(
       items: filtered.map((p) {
-        final preview = p.content.length > 100
-            ? '${p.content.substring(0, 100)}...'
+        final preview = p.content.length > 200
+            ? '${p.content.substring(0, 200)}...'
             : p.content;
         return PrayerItem(
           prayerId: p.id,

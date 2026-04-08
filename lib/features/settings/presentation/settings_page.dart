@@ -4,9 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
-import 'package:woncheon_youth/core/router/app_router.dart';
+import 'package:woncheon_youth/core/api/auth_event_bus.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
@@ -51,7 +50,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     final storage = ref.read(secureStorageServiceProvider);
     await storage.clearAll();
-    if (mounted) context.go(AppRoutes.login);
+    AuthEventBus.instance.emit(AuthEvent.logout);
   }
 
   Future<void> _handleDeleteAccount() async {
@@ -81,10 +80,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
       final storage = ref.read(secureStorageServiceProvider);
       await storage.clearAll();
-
-      if (mounted) {
-        context.go(AppRoutes.login);
-      }
+      AuthEventBus.instance.emit(AuthEvent.logout);
     } on DioException catch (e) {
       if (mounted) {
         final msg = getApiErrorMessage(e, fallback: '계정 삭제에 실패했습니다.');

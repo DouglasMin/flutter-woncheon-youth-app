@@ -84,8 +84,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     authorName: item.authorName as string,
     isAnonymous: item.isAnonymous as boolean,
     contentPreview:
-      (item.content as string).length > 100
-        ? (item.content as string).substring(0, 100) + '...'
+      (item.content as string).length > 200
+        ? (item.content as string).substring(0, 200) + '...'
         : item.content as string,
     createdAt: item.createdAt as string,
   }));
