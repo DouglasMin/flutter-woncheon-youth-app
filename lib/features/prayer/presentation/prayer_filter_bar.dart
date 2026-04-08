@@ -257,10 +257,10 @@ class _FilterChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primaryDark : Colors.white,
+          color: selected ? AppColors.primaryDark : context.cardColor,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? AppColors.primaryDark : AppColors.divider,
+            color: selected ? AppColors.primaryDark : context.dividerColor,
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -269,7 +269,7 @@ class _FilterChip extends StatelessWidget {
           style: TextStyle(
             fontSize: 13,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-            color: selected ? Colors.white : AppColors.textSecondary,
+            color: selected ? Colors.white : context.textSecondary,
           ),
         ),
       ),

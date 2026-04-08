@@ -414,7 +414,7 @@ class _MenuCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(10),
+              color: context.cardShadowColor,
               blurRadius: 20,
               offset: const Offset(0, 4),
             ),
