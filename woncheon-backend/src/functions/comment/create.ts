@@ -55,5 +55,5 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }),
   );
 
-  return success({ commentId, authorName, content: content.trim(), createdAt }, 201);
+  return success({ commentId, authorName, content: content.trim(), createdAt, memberId }, 201);
 };

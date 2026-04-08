@@ -526,14 +526,20 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
           prayerId: widget.prayerId,
           content: content,
         );
-        ref.invalidate(commentsProvider(widget.prayerId));
       }
       _controller.clear();
-    } catch (e) {
-      debugPrint('[Comment] Error: $e');
+      // Refresh comments list after successful creation
+      if (mounted) {
+        ref.invalidate(commentsProvider(widget.prayerId));
+      }
+    } on DioException catch (e) {
+      debugPrint('[Comment] DioException: $e');
       if (mounted) {
         _showErrorMessage(context, '댓글 작성에 실패했습니다.');
       }
+    } catch (e) {
+      debugPrint('[Comment] Error: $e');
+      // invalidate 에러는 무시 — API는 성공했을 수 있음
     } finally {
       if (mounted) setState(() => _isSending = false);
     }

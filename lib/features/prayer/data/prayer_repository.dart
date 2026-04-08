@@ -65,16 +65,14 @@ class PrayerRepository {
         .toList();
   }
 
-  Future<CommentItem> createComment({
+  Future<void> createComment({
     required String prayerId,
     required String content,
   }) async {
-    final response = await _apiClient.dio.post<Map<String, dynamic>>(
+    await _apiClient.dio.post<Map<String, dynamic>>(
       Endpoints.comments(prayerId),
       data: {'content': content},
     );
-    final data = response.data!['data'] as Map<String, dynamic>;
-    return CommentItem.fromJson(data);
   }
 
   Future<void> updateComment({
