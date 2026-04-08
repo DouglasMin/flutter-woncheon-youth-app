@@ -1,6 +1,7 @@
 import type { APIGatewayProxyHandler } from 'aws-lambda';
-import { GetCommand, DeleteCommand } from '@aws-sdk/lib-dynamodb';
+import { GetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../../libs/dynamo.js';
+import { deleteItemsByPK } from '../../libs/batch-delete.js';
 import { success, error } from '../../libs/response.js';
 import { getMemberId, UNAUTHORIZED_RESPONSE } from '../../libs/auth-context.js';
 import type { PrayerRequest } from '../../types/prayer.js';
@@ -30,12 +31,13 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     return error('FORBIDDEN', '본인이 작성한 글만 삭제할 수 있습니다.', 403);
   }
 
-  await docClient.send(
-    new DeleteCommand({
-      TableName: TABLE_NAME,
-      Key: { PK: `PRAYER#${prayerId}`, SK: '#META' },
-    }),
-  );
+  try {
+    // Cascade delete: prayer #META + all COMMENT# + all REACTION# items
+    await deleteItemsByPK(`PRAYER#${prayerId}`);
+  } catch (err) {
+    console.error(`[prayer/delete] Failed to cascade delete ${prayerId}:`, err);
+    return error('INTERNAL_ERROR', '삭제 중 오류가 발생했습니다.', 500);
+  }
 
   return success({ message: '삭제되었습니다.' });
 };

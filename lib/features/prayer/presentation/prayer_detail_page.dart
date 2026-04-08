@@ -529,7 +529,8 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
         ref.invalidate(commentsProvider(widget.prayerId));
       }
       _controller.clear();
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[Comment] Error: $e');
       if (mounted) {
         _showErrorMessage(context, '댓글 작성에 실패했습니다.');
       }
