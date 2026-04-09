@@ -234,6 +234,32 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           ],
                         ),
                       ),
+
+                      const SizedBox(height: 20),
+
+                      // 새신자 등록 링크
+                      TextButton(
+                        onPressed: () =>
+                            context.push(AppRoutes.registerRequest),
+                        child: Text.rich(
+                          TextSpan(
+                            text: '새신자이신가요? ',
+                            style: TextStyle(
+                              color: context.textTertiary,
+                              fontSize: 14,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: '등록 요청하기',
+                                style: TextStyle(
+                                  color: context.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

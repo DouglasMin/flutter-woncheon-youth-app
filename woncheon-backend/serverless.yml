@@ -59,6 +59,15 @@ functions:
   jwtAuthorizer:
     handler: src/functions/auth/authorizer.handler
 
+  # ── Registration ────────────────────────────
+  registerRequest:
+    handler: src/functions/register/request.handler
+    events:
+      - http:
+          path: /auth/register-request
+          method: post
+          cors: true
+
   # ── Auth ────────────────────────────────────
   login:
     handler: src/functions/auth/login.handler

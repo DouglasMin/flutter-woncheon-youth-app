@@ -8,6 +8,7 @@ import {
   CalendarCheck,
   Heart,
   FolderKanban,
+  UserPlus,
   LogOut,
   Church,
 } from "lucide-react";
@@ -20,6 +21,7 @@ const navItems = [
   { href: "/attendance", label: "출결 현황", icon: CalendarCheck },
   { href: "/prayers", label: "중보기도", icon: Heart },
   { href: "/groups", label: "목장 관리", icon: FolderKanban },
+  { href: "/register-requests", label: "가입 요청", icon: UserPlus },
 ];
 
 export function Sidebar() {

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/features/auth/presentation/change_password_page.dart';
 import 'package:woncheon_youth/features/auth/presentation/login_page.dart';
+import 'package:woncheon_youth/features/auth/presentation/register_request_page.dart';
 import 'package:woncheon_youth/features/home/presentation/home_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_create_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_detail_page.dart';
@@ -23,6 +24,7 @@ abstract final class AppRoutes {
   static const attendanceCheck = '/attendance';
   static const attendanceStats = '/attendance/stats';
   static const settings = '/settings';
+  static const registerRequest = '/register';
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -35,14 +37,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isChangePassword =
           state.matchedLocation == AppRoutes.changePassword;
 
-      // Let splash handle its own navigation
-      if (isSplash || isChangePassword) return null;
+      final isRegister =
+          state.matchedLocation == AppRoutes.registerRequest;
+
+      // Let splash, change-password, register handle their own navigation
+      if (isSplash || isChangePassword || isRegister) return null;
 
       final token = await storage.getAccessToken();
       final isLoggedIn = token != null;
       final isLoginRoute = state.matchedLocation == AppRoutes.login;
 
-      if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
+      if (!isLoggedIn && !isLoginRoute && !isRegister) return AppRoutes.login;
       if (isLoggedIn && isLoginRoute) return AppRoutes.home;
       return null;
     },
@@ -54,6 +59,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.login,
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.registerRequest,
+        builder: (context, state) => const RegisterRequestPage(),
       ),
       GoRoute(
         path: AppRoutes.changePassword,
