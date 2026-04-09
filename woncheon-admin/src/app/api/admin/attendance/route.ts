@@ -82,16 +82,24 @@ export async function GET(request: Request) {
       }
 
       if (row.attendance_date) {
-        const dateStr = new Date(row.attendance_date).toISOString().split("T")[0];
+        // pg returns DATE as JS Date object — convert safely without timezone shift
+        const raw = row.attendance_date;
+        const dateStr = raw instanceof Date
+          ? `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`
+          : String(raw).split('T')[0];
         member.dates[dateStr] = row.is_present;
       }
     }
 
     return NextResponse.json({
       groups: Array.from(pivotMap.values()),
-      dates: dates.rows.map((r) =>
-        new Date(r.attendance_date).toISOString().split("T")[0]
-      ),
+      dates: dates.rows.map((r) => {
+        const raw = r.attendance_date;
+        if (raw instanceof Date) {
+          return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`;
+        }
+        return String(raw).split('T')[0];
+      }),
       allGroups: groups.rows.map((r) => ({
         id: Number(r.id),
         name: r.name,

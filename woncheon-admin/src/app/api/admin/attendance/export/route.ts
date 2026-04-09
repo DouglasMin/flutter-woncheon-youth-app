@@ -17,9 +17,13 @@ export async function GET(request: Request) {
        ORDER BY attendance_date`,
       [startDate, endDate]
     );
-    const dates = datesResult.rows.map((r) =>
-      new Date(r.attendance_date).toISOString().split("T")[0]
-    );
+    const dates = datesResult.rows.map((r) => {
+      const raw = r.attendance_date;
+      if (raw instanceof Date) {
+        return `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`;
+      }
+      return String(raw).split('T')[0];
+    });
 
     // Get all attendance data
     const result = await pool.query(
@@ -57,7 +61,10 @@ export async function GET(request: Request) {
         });
       }
       if (row.attendance_date) {
-        const dateStr = new Date(row.attendance_date).toISOString().split("T")[0];
+        const raw = row.attendance_date;
+        const dateStr = raw instanceof Date
+          ? `${raw.getFullYear()}-${String(raw.getMonth() + 1).padStart(2, '0')}-${String(raw.getDate()).padStart(2, '0')}`
+          : String(raw).split('T')[0];
         memberMap.get(key)!.dates[dateStr] = row.is_present;
       }
     }

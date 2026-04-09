@@ -1,5 +1,9 @@
-import { Pool } from 'pg';
+import { Pool, types } from 'pg';
 import { requireEnv } from './env.js';
+
+// Override DATE type parser to return string instead of JS Date
+// Prevents timezone shift (UTC midnight → KST = previous day)
+types.setTypeParser(1082, (val: string) => val); // 1082 = DATE OID
 
 let pool: Pool | null = null;
 
