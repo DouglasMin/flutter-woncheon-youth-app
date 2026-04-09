@@ -19,7 +19,7 @@ abstract final class AppConstants {
   static const String memberNameKey = 'member_name';
 
   // Pagination
-  static const int defaultPageSize = 20;
+  static const int defaultPageSize = 10;
 
   // Prayer
   static const int maxPrayerContentLength = 500;

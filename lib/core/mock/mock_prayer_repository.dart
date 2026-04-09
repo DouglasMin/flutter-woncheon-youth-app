@@ -45,7 +45,7 @@ class MockPrayerRepository {
   ];
 
   Future<PrayerListResponse> listPrayers({
-    int limit = 20,
+    int limit = 10,
     String? cursor,
     DateTime? startDate,
     DateTime? endDate,

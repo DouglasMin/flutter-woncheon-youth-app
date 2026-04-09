@@ -1,5 +1,6 @@
 import 'package:woncheon_youth/core/api/api_client.dart';
 import 'package:woncheon_youth/core/api/endpoints.dart';
+import 'package:woncheon_youth/core/constants.dart';
 import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
 import 'package:woncheon_youth/features/prayer/domain/prayer_model.dart';
 
@@ -9,7 +10,7 @@ class PrayerRepository {
   final ApiClient _apiClient;
 
   Future<PrayerListResponse> listPrayers({
-    int limit = 20,
+    int limit = AppConstants.defaultPageSize,
     String? cursor,
     String? startDate,
     String? endDate,

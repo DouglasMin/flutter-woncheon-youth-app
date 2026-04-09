@@ -37,7 +37,11 @@ class _AttendanceCheckPageState extends ConsumerState<AttendanceCheckPage> {
               color: AppColors.error.withAlpha(150),
             ),
             const SizedBox(height: 16),
-            Text('오류: $e'),
+            Text(
+              '출결 데이터를 불러올 수 없습니다.',
+              style: TextStyle(fontSize: 15, color: context.textSecondary),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => ref.invalidate(weeklyAttendanceProvider),

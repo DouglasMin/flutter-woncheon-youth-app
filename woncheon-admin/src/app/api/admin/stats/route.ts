@@ -2,13 +2,9 @@ import { NextResponse } from "next/server";
 import { ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { docClient, TABLE_NAME } from "@/lib/db/dynamo";
 import { getPool } from "@/lib/db/pg";
-import { isAuthenticated } from "@/lib/auth";
 
+// Auth is handled by middleware — no duplicate check needed here
 export async function GET() {
-  if (!(await isAuthenticated())) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   try {
     const memberScan = await docClient.send(
       new ScanCommand({

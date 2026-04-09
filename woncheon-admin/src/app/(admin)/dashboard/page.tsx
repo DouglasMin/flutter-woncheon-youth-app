@@ -26,7 +26,10 @@ export default function DashboardPage() {
         setStats(data);
         setError(false);
       })
-      .catch(() => setError(true))
+      .catch((err) => {
+        console.error("[Dashboard] Stats fetch error:", err);
+        setError(true);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -88,6 +91,8 @@ export default function DashboardPage() {
             <CardContent>
               {loading ? (
                 <div className="h-8 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+              ) : error ? (
+                <p className="text-sm text-red-400">불러오기 실패</p>
               ) : (
                 <p className="text-3xl font-bold tracking-tight">
                   {card.value}

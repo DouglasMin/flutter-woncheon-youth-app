@@ -24,10 +24,10 @@ class GroupMember {
   final bool isPresent;
 
   factory GroupMember.fromJson(Map<String, dynamic> json) => GroupMember(
-        memberId: json['member_id'] as String,
-        memberName: json['member_name'] as String,
-        note: json['note'] as String?,
-        isPresent: json['is_present'] as bool? ?? false,
+        memberId: json['member_id']?.toString() ?? '',
+        memberName: json['member_name']?.toString() ?? '',
+        note: json['note']?.toString(),
+        isPresent: json['is_present'] == true,
       );
 
   GroupMember copyWith({bool? isPresent}) => GroupMember(

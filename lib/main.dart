@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:woncheon_youth/core/api/auth_event_bus.dart';
+import 'package:woncheon_youth/core/storage/read_prayers_storage.dart';
 import 'package:woncheon_youth/core/push/push_providers.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
@@ -59,8 +60,10 @@ class _AppRootState extends State<AppRoot> {
   @override
   void initState() {
     super.initState();
-    _logoutSub = AuthEventBus.instance.stream.listen((event) {
+    _logoutSub = AuthEventBus.instance.stream.listen((event) async {
       if (event == AuthEvent.logout || event == AuthEvent.forceLogout) {
+        // Clear read prayer cache on logout
+        await ReadPrayersStorage().clearAll();
         setState(() => _sessionKey++);
       }
     });

@@ -20,4 +20,9 @@ class ReadPrayersStorage {
     final ids = await getReadIds();
     return ids.contains(prayerId);
   }
+
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_key);
+  }
 }
