@@ -9,6 +9,7 @@ import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -17,35 +18,13 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage>
-    with SingleTickerProviderStateMixin {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _nameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameFocus = FocusNode();
   final _passwordFocus = FocusNode();
-  late final AnimationController _fadeController;
-  late final Animation<double> _fadeAnimation;
-  late final Animation<Offset> _slideAnimation;
   bool _isLoading = false;
   String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _fadeController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1000),
-    );
-    _fadeAnimation = CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeOutCubic,
-    );
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero).animate(
-          CurvedAnimation(parent: _fadeController, curve: Curves.easeOutCubic),
-        );
-    _fadeController.forward();
-  }
 
   @override
   void dispose() {
@@ -53,7 +32,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     _passwordController.dispose();
     _nameFocus.dispose();
     _passwordFocus.dispose();
-    _fadeController.dispose();
     super.dispose();
   }
 
@@ -76,11 +54,13 @@ class _LoginPageState extends ConsumerState<LoginPage>
     try {
       late final Map<String, dynamic> data;
       if (kMockMode) {
-        final mockRepo = ref.read(mockAuthRepositoryProvider);
-        data = await mockRepo.login(name: name, password: password);
+        data = await ref
+            .read(mockAuthRepositoryProvider)
+            .login(name: name, password: password);
       } else {
-        final authRepo = ref.read(authRepositoryProvider);
-        data = await authRepo.login(name: name, password: password);
+        data = await ref
+            .read(authRepositoryProvider)
+            .login(name: name, password: password);
       }
       final isFirstLogin = data['isFirstLogin'] as bool? ?? false;
 
@@ -106,166 +86,155 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   @override
   Widget build(BuildContext context) {
+    final wc = context.wc;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: Theme.of(context).brightness == Brightness.dark
-                ? const [AppColors.darkSurface, AppColors.darkSurface]
-                : const [Color(0xFFECECEA), AppColors.surface],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnimation,
-            child: SlideTransition(
-              position: _slideAnimation,
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Logo
-                      Image.asset(
-                        'assets/images/woncheon_lgo.png',
-                        width: 100,
-                        height: 100,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        '원천청년부',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: context.textPrimary,
-                          letterSpacing: -0.5,
+      backgroundColor: wc.bg,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 60, 28, 24),
+          child: Column(
+            children: [
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset(
+                          'assets/images/woncheon_lgo.png',
+                          width: 72,
+                          height: 72,
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '함께 기도하고, 함께 성장해요',
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: context.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 44),
-
-                      // Form card
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: context.cardColor,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: context.cardShadowColor,
-                              blurRadius: 24,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            AdaptiveTextField(
-                              controller: _nameController,
-                              placeholder: '이름',
-                              textInputAction: TextInputAction.next,
-                              focusNode: _nameFocus,
-                              onSubmitted: (_) => _passwordFocus.requestFocus(),
-                            ),
-                            const SizedBox(height: 14),
-                            AdaptiveTextField(
-                              controller: _passwordController,
-                              placeholder: '비밀번호',
-                              obscureText: true,
-                              textInputAction: TextInputAction.done,
-                              focusNode: _passwordFocus,
-                              onSubmitted: (_) => _handleLogin(),
-                            ),
-
-                            // Error
-                            AnimatedSize(
-                              duration: const Duration(milliseconds: 200),
-                              child: _errorMessage != null
-                                  ? Padding(
-                                      padding: const EdgeInsets.only(top: 14),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 10,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.error.withAlpha(15),
-                                          borderRadius: BorderRadius.circular(
-                                            10,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _errorMessage!,
-                                          style: TextStyle(
-                                            color: AppColors.error,
-                                            fontSize: 13,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ),
-                                    )
-                                  : const SizedBox.shrink(),
-                            ),
-                            const SizedBox(height: 20),
-
-                            AdaptiveButton(
-                              onPressed: _isLoading ? null : _handleLogin,
-                              isLoading: _isLoading,
-                              child: const Text(
-                                '로그인',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      // 새신자 등록 링크
-                      TextButton(
-                        onPressed: () =>
-                            context.push(AppRoutes.registerRequest),
-                        child: Text.rich(
-                          TextSpan(
-                            text: '새신자이신가요? ',
-                            style: TextStyle(
-                              color: context.textTertiary,
-                              fontSize: 14,
-                            ),
-                            children: [
-                              TextSpan(
-                                text: '등록 요청하기',
-                                style: TextStyle(
-                                  color: context.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(height: 14),
+                        Text(
+                          '원천청년부',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: wc.text,
+                            letterSpacing: -0.5,
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '함께 기도하고, 함께 성장해요',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: wc.textSec,
+                          ),
+                        ),
+                        const SizedBox(height: 42),
+                        _field(
+                          controller: _nameController,
+                          focusNode: _nameFocus,
+                          hint: '이름',
+                          onSubmitted: (_) => _passwordFocus.requestFocus(),
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 10),
+                        _field(
+                          controller: _passwordController,
+                          focusNode: _passwordFocus,
+                          hint: '비밀번호',
+                          obscureText: true,
+                          onSubmitted: (_) => _handleLogin(),
+                          textInputAction: TextInputAction.done,
+                        ),
+                        if (_errorMessage != null) ...[
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: wc.danger,
+                              ),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 18),
+                        WCButton(
+                          onPressed: _isLoading ? null : _handleLogin,
+                          disabled: _isLoading,
+                          child: _isLoading
+                              ? SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: wc.bg,
+                                  ),
+                                )
+                              : const Text('로그인'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.registerRequest),
+                child: Text.rich(
+                  TextSpan(
+                    text: '처음이신가요? ',
+                    style: TextStyle(color: wc.textSec, fontSize: 14),
+                    children: [
+                      TextSpan(
+                        text: '등록 요청하기',
+                        style: TextStyle(
+                          color: wc.text,
+                          fontWeight: FontWeight.w600,
+                          decoration: TextDecoration.underline,
+                          decorationColor: wc.text,
+                          decorationStyle: TextDecorationStyle.solid,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field({
+    required TextEditingController controller,
+    required FocusNode focusNode,
+    required String hint,
+    bool obscureText = false,
+    TextInputAction textInputAction = TextInputAction.next,
+    ValueChanged<String>? onSubmitted,
+  }) {
+    final wc = context.wc;
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      obscureText: obscureText,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      style: TextStyle(fontSize: 15, color: wc.text),
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: wc.surface,
+        hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: wc.accent, width: 1.5),
         ),
       ),
     );

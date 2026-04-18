@@ -1,21 +1,24 @@
 import 'package:dio/dio.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
-import 'package:woncheon_youth/core/constants.dart';
+import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
+import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
-class RegisterRequestPage extends StatefulWidget {
+class RegisterRequestPage extends ConsumerStatefulWidget {
   const RegisterRequestPage({super.key});
 
   @override
-  State<RegisterRequestPage> createState() => _RegisterRequestPageState();
+  ConsumerState<RegisterRequestPage> createState() =>
+      _RegisterRequestPageState();
 }
 
-class _RegisterRequestPageState extends State<RegisterRequestPage> {
+class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _noteController = TextEditingController();
@@ -49,16 +52,13 @@ class _RegisterRequestPageState extends State<RegisterRequestPage> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     await Haptic.medium();
 
     try {
-      final dio = Dio(BaseOptions(baseUrl: AppConstants.apiBaseUrl));
-      await dio.post<Map<String, dynamic>>(
+      await ref.read(apiClientProvider).dio.post<Map<String, dynamic>>(
         '/auth/register-request',
         data: {'name': name, 'phone': phone, 'note': note},
       );
-
       setState(() => _success = true);
       await Haptic.light();
     } on DioException catch (e) {
@@ -73,219 +73,199 @@ class _RegisterRequestPageState extends State<RegisterRequestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final wc = context.wc;
     if (_success) {
-      return _buildSuccessScreen(context);
-    }
-
-    final body = SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                FluentIcons.person_add_24_filled,
-                size: 48,
-                color: context.isDark ? AppColors.darkTextSecondary : AppColors.primaryDark,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '새신자 등록 요청',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: context.textPrimary,
+      return Scaffold(
+        backgroundColor: wc.bg,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: () => context.go(AppRoutes.login),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(FluentIcons.dismiss_24_regular,
+                        color: wc.textSec, size: 26),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '정보를 입력하시면 관리자 승인 후\n앱을 이용하실 수 있습니다.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: context.textSecondary,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 36),
-
-              // Form
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: context.cardColor,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: context.cardShadowColor,
-                      blurRadius: 24,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AdaptiveTextField(
-                      controller: _nameController,
-                      placeholder: '이름 *',
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AdaptiveTextField(
-                      controller: _phoneController,
-                      placeholder: '연락처 (휴대폰 번호) *',
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: 14),
-                    AdaptiveTextField(
-                      controller: _noteController,
-                      placeholder: '하고 싶은 말 (선택)',
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: (_) => _handleSubmit(),
-                    ),
-
-                    // Error
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 200),
-                      child: _errorMessage != null
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 14),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error.withAlpha(15),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  _errorMessage!,
-                                  style: const TextStyle(
-                                    color: AppColors.error,
-                                    fontSize: 13,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                ),
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                    const SizedBox(height: 20),
-
-                    AdaptiveButton(
-                      onPressed: _isLoading ? null : _handleSubmit,
-                      isLoading: _isLoading,
-                      child: const Text(
-                        '요청하기',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 68,
+                          height: 68,
+                          decoration: BoxDecoration(
+                            color: wc.accentSoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            FluentIcons.checkmark_24_regular,
+                            size: 36,
+                            color: wc.accentInk,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 22),
+                        Text(
+                          '등록 요청을 보냈어요',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: wc.text,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          '관리자 승인 후\n로그인이 가능해져요. (보통 1–2일)',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: wc.textSec,
+                            height: 1.6,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-
-              const SizedBox(height: 16),
-              TextButton(
-                onPressed: () => context.pop(),
-                child: Text(
-                  '로그인으로 돌아가기',
-                  style: TextStyle(color: context.textTertiary),
+                WCButton(
+                  onPressed: () => context.go(AppRoutes.login),
+                  tone: WCButtonTone.soft,
+                  child: const Text('로그인 화면으로'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-
-    if (isIOS) {
-      return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: const Text('새신자 등록'),
-          backgroundColor: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-              ? AppTheme.cupertinoDark.barBackgroundColor
-              : AppTheme.cupertinoLight.barBackgroundColor,
-        ),
-        child: Material(type: MaterialType.transparency, child: body),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('새신자 등록')),
-      body: body,
-    );
-  }
-
-  Widget _buildSuccessScreen(BuildContext context) {
-    final content = SafeArea(
-      child: Center(
+      backgroundColor: wc.bg,
+      body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withAlpha(15),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  FluentIcons.checkmark_circle_24_filled,
-                  size: 56,
-                  color: AppColors.success,
-                ),
+              IconButton(
+                onPressed: () => context.pop(),
+                padding: EdgeInsets.zero,
+                alignment: Alignment.centerLeft,
+                icon: Icon(FluentIcons.chevron_left_24_regular,
+                    color: wc.textSec, size: 26),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 14),
               Text(
-                '요청이 접수되었습니다!',
+                '새신자 등록 요청',
                 style: TextStyle(
-                  fontSize: 22,
+                  fontSize: 26,
                   fontWeight: FontWeight.w700,
-                  color: context.textPrimary,
+                  color: wc.text,
+                  letterSpacing: -0.6,
+                  height: 1.2,
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
-                '관리자가 승인하면\n로그인할 수 있습니다.',
+                '정보를 남겨주시면 담당자가\n확인 후 연락드릴게요.',
                 style: TextStyle(
-                  fontSize: 15,
-                  color: context.textSecondary,
-                  height: 1.5,
+                  fontSize: 14,
+                  color: wc.textSec,
+                  height: 1.55,
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 36),
-              AdaptiveButton(
-                onPressed: () => context.go('/login'),
-                child: const Text(
-                  '로그인으로 돌아가기',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
+              const SizedBox(height: 26),
+              _field(
+                controller: _nameController,
+                hint: '이름',
+                action: TextInputAction.next,
+              ),
+              const SizedBox(height: 10),
+              _field(
+                controller: _phoneController,
+                hint: '연락처 (카카오 ID 또는 전화번호)',
+                action: TextInputAction.next,
+                keyboardType: TextInputType.text,
+              ),
+              const SizedBox(height: 10),
+              _field(
+                controller: _noteController,
+                hint: '간단한 소개 (예: 소개해주신 분, 사는 동네, 한 줄 자기소개)',
+                minLines: 4,
+                maxLines: 6,
+                action: TextInputAction.newline,
+              ),
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: wc.danger, fontSize: 13),
                 ),
+              ],
+              const Spacer(),
+              WCButton(
+                onPressed: _isLoading ? null : _handleSubmit,
+                disabled: _isLoading,
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: wc.bg,
+                        ),
+                      )
+                    : const Text('요청 보내기'),
               ),
             ],
           ),
         ),
       ),
     );
+  }
 
-    if (isIOS) {
-      return CupertinoPageScaffold(
-        child: Material(type: MaterialType.transparency, child: content),
-      );
-    }
-
-    return Scaffold(body: content);
+  Widget _field({
+    required TextEditingController controller,
+    required String hint,
+    TextInputAction action = TextInputAction.next,
+    TextInputType keyboardType = TextInputType.text,
+    int minLines = 1,
+    int maxLines = 1,
+  }) {
+    final wc = context.wc;
+    return TextField(
+      controller: controller,
+      textInputAction: action,
+      keyboardType: keyboardType,
+      minLines: minLines,
+      maxLines: maxLines,
+      style: TextStyle(color: wc.text, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: wc.surface,
+        hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.accent, width: 1.5),
+        ),
+      ),
+    );
   }
 }

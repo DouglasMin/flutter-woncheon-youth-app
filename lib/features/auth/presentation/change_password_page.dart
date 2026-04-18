@@ -1,8 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,9 +11,11 @@ import 'package:woncheon_youth/core/mock/mock_auth_repository.dart';
 import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/push/push_providers.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
+import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
 class ChangePasswordPage extends ConsumerStatefulWidget {
   const ChangePasswordPage({super.key});
@@ -26,6 +28,8 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
+  StreamSubscription<String>? _pushTokenSub;
+  Timer? _pushTokenCancelTimer;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -34,8 +38,14 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     _currentController.dispose();
     _newController.dispose();
     _confirmController.dispose();
+    _pushTokenCancelTimer?.cancel();
+    _pushTokenSub?.cancel();
     super.dispose();
   }
+
+  bool get _valid =>
+      _newController.text.length >= 8 &&
+      _newController.text == _confirmController.text;
 
   Future<void> _handleChange() async {
     final current = _currentController.text;
@@ -46,12 +56,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       setState(() => _errorMessage = '모든 항목을 입력해주세요.');
       return;
     }
-
     if (newPw.length < 8) {
       setState(() => _errorMessage = '8자 이상 입력해주세요.');
       return;
     }
-
     if (newPw != confirm) {
       setState(() => _errorMessage = '새 비밀번호가 일치하지 않습니다.');
       return;
@@ -61,30 +69,24 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
       _isLoading = true;
       _errorMessage = null;
     });
-
     await Haptic.medium();
 
     try {
       if (kMockMode) {
-        final mockRepo = ref.read(mockAuthRepositoryProvider);
-        await mockRepo.changePassword(
-          currentPassword: current,
-          newPassword: newPw,
-        );
+        await ref.read(mockAuthRepositoryProvider).changePassword(
+              currentPassword: current,
+              newPassword: newPw,
+            );
       } else {
-        final authRepo = ref.read(authRepositoryProvider);
-        await authRepo.changePassword(
-          currentPassword: current,
-          newPassword: newPw,
-        );
+        await ref.read(authRepositoryProvider).changePassword(
+              currentPassword: current,
+              newPassword: newPw,
+            );
       }
 
       if (!mounted) return;
       unawaited(Haptic.light());
-
-      // Request notification permission after first password change
       await _requestPushPermission();
-
       if (!mounted) return;
       context.go(AppRoutes.home);
     } on MockApiException catch (e) {
@@ -103,120 +105,168 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   Future<void> _requestPushPermission() async {
     final pushService = ref.read(pushNotificationServiceProvider);
     final granted = await pushService.requestPermission();
-
-    if (!granted) return;
-
-    // Listen for token and register with server
-    final tokenSub = pushService.onTokenReceived.listen((token) async {
+    if (!granted || !mounted) return;
+    _pushTokenSub?.cancel();
+    final platform = Platform.isIOS ? 'ios' : 'android';
+    _pushTokenSub = pushService.onTokenReceived.listen((token) async {
+      if (!mounted) return;
       try {
-        final apiClient = ref.read(apiClientProvider);
-        await apiClient.dio.post<Map<String, dynamic>>(
+        await ref.read(apiClientProvider).dio.post<Map<String, dynamic>>(
           '/auth/device-token',
-          data: {'token': token, 'platform': 'ios'},
+          data: {'token': token, 'platform': platform},
         );
-      } catch (e) {
+      } on DioException catch (e) {
         debugPrint('Failed to register device token: $e');
       }
     });
-
-    // Clean up after a short delay (token arrives quickly)
-    Future<void>.delayed(const Duration(seconds: 10), tokenSub.cancel);
+    _pushTokenCancelTimer?.cancel();
+    _pushTokenCancelTimer = Timer(const Duration(seconds: 10), () {
+      _pushTokenSub?.cancel();
+      _pushTokenSub = null;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
+    final wc = context.wc;
     return Scaffold(
-      appBar: isIOS
-          ? null
-          : AppBar(title: const Text('비밀번호 변경'), centerTitle: true),
-      body: isIOS
-          ? CupertinoPageScaffold(
-              navigationBar: const CupertinoNavigationBar(
-                middle: Text('비밀번호 변경'),
-              ),
-              child: Material(
-                type: MaterialType.transparency,
-                child: _buildBody(theme),
-              ),
-            )
-          : _buildBody(theme),
-    );
-  }
-
-  Widget _buildBody(ThemeData theme) {
-    return SafeArea(
-      child: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+      backgroundColor: wc.bg,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Icon(
-                FluentIcons.shield_lock_24_filled,
-                size: 48,
-                color: theme.colorScheme.primary,
+              IconButton(
+                onPressed: () => context.pop(),
+                padding: EdgeInsets.zero,
+                alignment: Alignment.centerLeft,
+                icon: Icon(FluentIcons.chevron_left_24_regular,
+                    color: wc.textSec, size: 26),
               ),
-              const SizedBox(height: 16),
-              Text(
-                '첫 로그인 시\n비밀번호를 변경해주세요',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
+              const SizedBox(height: 24),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: wc.accentSoft,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    FluentIcons.lock_closed_24_regular,
+                    size: 22,
+                    color: wc.accentInk,
+                  ),
                 ),
-                textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 32),
-              AdaptiveTextField(
+              const SizedBox(height: 18),
+              Text(
+                '새 비밀번호를\n설정해주세요',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: wc.text,
+                  letterSpacing: -0.5,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                '보안을 위해 처음 로그인 시에는\n비밀번호 변경이 필요합니다.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: wc.textSec,
+                  height: 1.55,
+                ),
+              ),
+              const SizedBox(height: 30),
+              _field(
                 controller: _currentController,
-                placeholder: '현재 비밀번호',
-                obscureText: true,
-                textInputAction: TextInputAction.next,
+                hint: '현재 비밀번호',
+                obscure: true,
+                action: TextInputAction.next,
               ),
-              const SizedBox(height: 14),
-              AdaptiveTextField(
+              const SizedBox(height: 10),
+              _field(
                 controller: _newController,
-                placeholder: '새 비밀번호 (8자 이상)',
-                obscureText: true,
-                textInputAction: TextInputAction.next,
+                hint: '새 비밀번호 (8자 이상)',
+                obscure: true,
+                action: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: 14),
-              AdaptiveTextField(
+              const SizedBox(height: 10),
+              _field(
                 controller: _confirmController,
-                placeholder: '새 비밀번호 확인',
-                obscureText: true,
-                textInputAction: TextInputAction.done,
+                hint: '비밀번호 확인',
+                obscure: true,
+                action: TextInputAction.done,
+                onChanged: (_) => setState(() {}),
                 onSubmitted: (_) => _handleChange(),
               ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                child: _errorMessage != null
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            color: theme.colorScheme.error,
-                            fontSize: 14,
-                          ),
-                          textAlign: TextAlign.center,
+              if (_errorMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(color: wc.danger, fontSize: 12),
+                ),
+              ],
+              const Spacer(),
+              WCButton(
+                onPressed: (_isLoading || !_valid) ? null : _handleChange,
+                disabled: _isLoading || !_valid,
+                child: _isLoading
+                    ? SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: wc.bg,
                         ),
                       )
-                    : const SizedBox.shrink(),
-              ),
-              const SizedBox(height: 28),
-              AdaptiveButton(
-                onPressed: _isLoading ? null : _handleChange,
-                isLoading: _isLoading,
-                child: const Text(
-                  '변경하기',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
-                ),
+                    : const Text('변경하고 시작하기'),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field({
+    required TextEditingController controller,
+    required String hint,
+    bool obscure = false,
+    TextInputAction action = TextInputAction.next,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onSubmitted,
+  }) {
+    final wc = context.wc;
+    return TextField(
+      controller: controller,
+      obscureText: obscure,
+      textInputAction: action,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      style: TextStyle(color: wc.text, fontSize: 15),
+      decoration: InputDecoration(
+        hintText: hint,
+        filled: true,
+        fillColor: wc.surface,
+        hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: wc.accent, width: 1.5),
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
+import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -12,67 +13,32 @@ class SplashPage extends ConsumerStatefulWidget {
 }
 
 class _SplashPageState extends ConsumerState<SplashPage>
-    with TickerProviderStateMixin {
-  late final AnimationController _logoController;
-  late final Animation<double> _logoScale;
-  late final Animation<double> _logoOpacity;
-
-  late final AnimationController _textController;
-  late final Animation<double> _textOpacity;
-  late final Animation<Offset> _textSlide;
-
-  static const _bgColor = Color(0xFF0A0E2A);
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
 
   @override
   void initState() {
     super.initState();
-
-    _logoController = AnimationController(
+    _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 900),
+      duration: const Duration(milliseconds: 700),
     );
-    _logoScale = Tween<double>(begin: 0.75, end: 1).animate(
-      CurvedAnimation(parent: _logoController, curve: Curves.easeOutBack),
+    _scale = Tween<double>(begin: 0.92, end: 1).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
     );
-    _logoOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _logoController,
-        curve: const Interval(0, 0.6, curve: Curves.easeIn),
-      ),
-    );
-
-    _textController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _textOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOut),
-    );
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
-    );
-
-    _runSequence();
+    _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _run();
   }
 
-  Future<void> _runSequence() async {
-    await _logoController.forward();
-
-    await Future<void>.delayed(const Duration(milliseconds: 200));
-    await _textController.forward();
-
-    await Future<void>.delayed(const Duration(milliseconds: 800));
-
+  Future<void> _run() async {
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    await _ctrl.forward();
+    await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
-
-    final storage = ref.read(secureStorageServiceProvider);
-    final token = await storage.getAccessToken();
-
+    final token = await ref.read(secureStorageServiceProvider).getAccessToken();
     if (!mounted) return;
-
     if (token != null) {
       context.go(AppRoutes.home);
     } else {
@@ -82,53 +48,53 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   void dispose() {
-    _logoController.dispose();
-    _textController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final wc = context.wc;
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: wc.bg,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AnimatedBuilder(
-              animation: _logoController,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _logoOpacity.value,
-                  child: Transform.scale(
-                    scale: _logoScale.value,
-                    child: child,
-                  ),
-                );
-              },
-              child: Image.asset(
-                'assets/images/woncheon_lgo.png',
-                width: 160,
-                height: 160,
-              ),
-            ),
-            const SizedBox(height: 28),
-            SlideTransition(
-              position: _textSlide,
-              child: FadeTransition(
-                opacity: _textOpacity,
-                child: const Text(
+        child: FadeTransition(
+          opacity: _opacity,
+          child: AnimatedBuilder(
+            animation: _scale,
+            builder: (_, child) =>
+                Transform.scale(scale: _scale.value, child: child),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset(
+                  'assets/images/woncheon_lgo.png',
+                  width: 110,
+                  height: 110,
+                ),
+                const SizedBox(height: 26),
+                Text(
                   '원천청년부',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 3,
+                    color: wc.text,
+                    letterSpacing: -0.6,
                   ),
                 ),
-              ),
+                const SizedBox(height: 6),
+                Text(
+                  'WONCHEON YOUTH',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: wc.textTer,
+                    letterSpacing: 2.5,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

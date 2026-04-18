@@ -3,12 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_filter_bar.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
 class PrayerListPage extends ConsumerStatefulWidget {
   const PrayerListPage({super.key});
@@ -34,15 +34,6 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
     super.dispose();
   }
 
-  void _toggleViewMode() {
-    Haptic.selection();
-    final current = ref.read(prayerViewModeProvider);
-    ref.read(prayerViewModeProvider.notifier).state =
-        current == PrayerViewMode.list
-            ? PrayerViewMode.card
-            : PrayerViewMode.list;
-  }
-
   void _onScroll() {
     final isLoading =
         ref.read(prayerListProvider).valueOrNull?.isLoadingMore ?? false;
@@ -55,9 +46,14 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final wc = context.wc;
     final state = ref.watch(prayerListProvider);
     final readIds = ref.watch(readPrayerIdsProvider).valueOrNull ?? {};
-    final viewMode = ref.watch(prayerViewModeProvider);
+
+    final unread = state.valueOrNull?.items
+            .where((p) => !readIds.contains(p.prayerId))
+            .length ??
+        0;
 
     final listContent = state.when(
       loading: () => Center(
@@ -65,259 +61,223 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
             ? const CupertinoActivityIndicator(radius: 14)
             : const CircularProgressIndicator(),
       ),
-      error: (e, _) => _buildError(),
+      error: (_, __) => _ListErrorView(
+        onRetry: () => ref.read(prayerListProvider.notifier).refresh(),
+      ),
       data: (data) {
-        if (data.items.isEmpty) return _buildEmpty();
-
+        if (data.items.isEmpty) return const _ListEmptyView();
         return RefreshIndicator(
           onRefresh: () => ref.read(prayerListProvider.notifier).refresh(),
-          color: AppColors.primary,
-          child: viewMode == PrayerViewMode.list
-              ? ListView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  itemCount:
-                      data.items.length + (data.isLoadingMore ? 1 : 0),
-                  itemBuilder: (context, index) =>
-                      _buildItem(context, data, index, readIds),
-                )
-              : GridView.builder(
-                  controller: _scrollController,
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 0.85,
+          color: wc.accent,
+          child: ListView.separated(
+            controller: _scrollController,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+            itemCount: data.items.length + (data.isLoadingMore ? 1 : 0),
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              if (index == data.items.length) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: isIOS
+                        ? const CupertinoActivityIndicator()
+                        : const CircularProgressIndicator(),
                   ),
-                  itemCount:
-                      data.items.length + (data.isLoadingMore ? 1 : 0),
-                  itemBuilder: (context, index) =>
-                      _buildItem(context, data, index, readIds),
-                ),
+                );
+              }
+              final item = data.items[index];
+              final date = DateTime.tryParse(item.createdAt);
+              return _PrayerCard(
+                authorName: item.authorName,
+                contentPreview: item.contentPreview,
+                date: date,
+                isAnonymous: item.isAnonymous,
+                isRead: readIds.contains(item.prayerId),
+                onTap: () {
+                  Haptic.selection();
+                  context.push(AppRoutes.prayerDetail(item.prayerId));
+                },
+              );
+            },
+          ),
         );
       },
     );
 
-    final body = Column(
-      children: [
-        const SizedBox(height: 8),
-        const PrayerFilterBar(),
-        const SizedBox(height: 8),
-        Expanded(child: listContent),
-      ],
-    );
-
-    if (isIOS) {
-      return CupertinoPageScaffold(
-        navigationBar: CupertinoNavigationBar(
-          middle: const Text(
-            '중보기도',
-            style: TextStyle(fontWeight: FontWeight.w600),
-          ),
-          trailing: CupertinoButton(
-            padding: EdgeInsets.zero,
-            onPressed: _toggleViewMode,
-            child: Icon(
-              viewMode == PrayerViewMode.list
-                  ? FluentIcons.grid_24_regular
-                  : FluentIcons.list_24_regular,
-              size: 22,
+    return Scaffold(
+      backgroundColor: wc.bg,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '중보기도',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w700,
+                          color: wc.text,
+                          letterSpacing: -0.7,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      if (unread > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            '· 새 글 $unread',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: wc.accent,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                  child: Text(
+                    '함께 기도해요',
+                    style: TextStyle(fontSize: 13, color: wc.textTer),
+                  ),
+                ),
+                const PrayerFilterBar(),
+                const SizedBox(height: 8),
+                Expanded(child: listContent),
+              ],
             ),
           ),
-          backgroundColor: MediaQuery.platformBrightnessOf(context) == Brightness.dark
-              ? AppTheme.cupertinoDark.barBackgroundColor
-              : AppTheme.cupertinoLight.barBackgroundColor,
-        ),
-        child: Material(
-          type: MaterialType.transparency,
-          child: Stack(
-            children: [
-              SafeArea(child: body),
-              Positioned(
-                right: 20,
-                bottom: 28,
-                child: _buildFab(context),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('중보기도'),
-        actions: [
-          IconButton(
-            onPressed: _toggleViewMode,
-            icon: Icon(
-              viewMode == PrayerViewMode.list
-                  ? FluentIcons.grid_24_regular
-                  : FluentIcons.list_24_regular,
-              size: 22,
+          Positioned(
+            right: 20,
+            bottom: 28 + MediaQuery.of(context).padding.bottom,
+            child: _ComposeFab(
+              onPressed: _openCompose,
             ),
           ),
         ],
       ),
-      body: body,
-      floatingActionButton: _buildFab(context),
     );
   }
 
-  Widget _buildError() {
+  Future<void> _openCompose() async {
+    await Haptic.light();
+    if (!mounted) return;
+    final result = await context.push<bool>(AppRoutes.prayerCreate);
+    if ((result ?? false) && mounted) {
+      await ref.read(prayerListProvider.notifier).refresh();
+    }
+  }
+}
+
+class _ComposeFab extends StatelessWidget {
+  const _ComposeFab({required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          color: wc.text,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Icon(
+          FluentIcons.edit_24_regular,
+          size: 24,
+          color: wc.bg,
+        ),
+      ),
+    );
+  }
+}
+
+class _ListErrorView extends StatelessWidget {
+  const _ListErrorView({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.error.withAlpha(15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              FluentIcons.error_circle_24_regular,
-              size: 36,
-              color: AppColors.error.withAlpha(150),
-            ),
+          Icon(
+            FluentIcons.error_circle_24_regular,
+            size: 36,
+            color: wc.textTer,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             '오류가 발생했습니다',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
-              color: context.textPrimary,
+              color: wc.text,
             ),
           ),
           const SizedBox(height: 12),
           TextButton(
-            onPressed: () =>
-                ref.read(prayerListProvider.notifier).refresh(),
-            child: const Text('다시 시도'),
+            onPressed: onRetry,
+            child: Text(
+              '다시 시도',
+              style: TextStyle(color: wc.accent),
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildEmpty() {
+class _ListEmptyView extends StatelessWidget {
+  const _ListEmptyView();
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withAlpha(12),
-              shape: BoxShape.circle,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🕊️', style: TextStyle(fontSize: 40)),
+            const SizedBox(height: 12),
+            Text(
+              '아직 올라온 기도가 없어요',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: wc.text,
+              ),
             ),
-            child: Icon(
-              FluentIcons.heart_24_regular,
-              size: 44,
-              color: AppColors.primary.withAlpha(120),
+            const SizedBox(height: 6),
+            Text(
+              '첫 번째로 나눠주세요',
+              style: TextStyle(fontSize: 13, color: wc.textTer),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            '아직 올라온 기도가 없어요',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w600,
-              color: context.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '첫 번째로 나눠주세요',
-            style: TextStyle(
-              fontSize: 14,
-              color: context.textTertiary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildItem(
-    BuildContext context,
-    PrayerListState data,
-    int index,
-    Set<String> readIds,
-  ) {
-    if (index == data.items.length) {
-      return Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: isIOS
-              ? const CupertinoActivityIndicator()
-              : const CircularProgressIndicator(),
+          ],
         ),
-      );
-    }
-
-    final item = data.items[index];
-    final date = DateTime.tryParse(item.createdAt);
-    final dateStr = date != null
-        ? DateFormat('M/d (E)', 'ko').format(date.toLocal())
-        : '';
-    final viewMode = ref.read(prayerViewModeProvider);
-
-    if (viewMode == PrayerViewMode.card) {
-      return _PrayerCardCompact(
-        authorName: item.authorName,
-        contentPreview: item.contentPreview,
-        dateStr: dateStr,
-        isAnonymous: item.isAnonymous,
-        isRead: readIds.contains(item.prayerId),
-        onTap: () {
-          Haptic.selection();
-          context.push(AppRoutes.prayerDetail(item.prayerId));
-        },
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: _PrayerCard(
-        authorName: item.authorName,
-        contentPreview: item.contentPreview,
-        dateStr: dateStr,
-        isAnonymous: item.isAnonymous,
-        isRead: readIds.contains(item.prayerId),
-        onTap: () {
-          Haptic.selection();
-          context.push(AppRoutes.prayerDetail(item.prayerId));
-        },
-      ),
-    );
-  }
-
-  Widget _buildFab(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryDark.withAlpha(40),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: FloatingActionButton(
-        onPressed: () async {
-          await Haptic.light();
-          if (!context.mounted) return;
-          final result = await context.push<bool>(AppRoutes.prayerCreate);
-          if (result ?? false) {
-            await ref.read(prayerListProvider.notifier).refresh();
-          }
-        },
-        child: const Icon(FluentIcons.compose_24_filled),
       ),
     );
   }
@@ -327,7 +287,7 @@ class _PrayerCard extends StatelessWidget {
   const _PrayerCard({
     required this.authorName,
     required this.contentPreview,
-    required this.dateStr,
+    required this.date,
     required this.isAnonymous,
     required this.isRead,
     required this.onTap,
@@ -335,251 +295,59 @@ class _PrayerCard extends StatelessWidget {
 
   final String authorName;
   final String contentPreview;
-  final String dateStr;
+  final DateTime? date;
   final bool isAnonymous;
   final bool isRead;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final initial = authorName.isEmpty ? '?' : authorName[0];
-    final avatarColors = isAnonymous
-        ? [AppColors.textTertiary, const Color(0xFFB0B8C4)]
-        : [AppColors.primaryDark, AppColors.primary];
+    final wc = context.wc;
+    final dateStr = date != null ? formatRelative(date!) : '';
 
-    return Container(
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: context.cardShadowColor,
-            blurRadius: 12,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: avatarColors),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      authorName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: context.textPrimary,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (isRead)
-                      Container(
-                        margin: const EdgeInsets.only(right: 6),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.textTertiary.withAlpha(20),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '읽음',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w500,
-                            color: context.textTertiary,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: context.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
+    return WCCard(
+      anon: isAnonymous,
+      onTap: onTap,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (isAnonymous)
+                const AnonPill(small: true)
+              else
                 Text(
-                  contentPreview,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
+                  authorName,
                   style: TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: context.textSecondary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: wc.text,
+                    letterSpacing: -0.3,
                   ),
                 ),
-              ],
-            ),
+              const SizedBox(width: 6),
+              Text(
+                '· $dateStr',
+                style: TextStyle(fontSize: 11.5, color: wc.textTer),
+              ),
+              const Spacer(),
+              if (!isRead) const UnreadDot(),
+            ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Compact card for grid/card view
-class _PrayerCardCompact extends StatelessWidget {
-  const _PrayerCardCompact({
-    required this.authorName,
-    required this.contentPreview,
-    required this.dateStr,
-    required this.isAnonymous,
-    required this.isRead,
-    required this.onTap,
-  });
-
-  final String authorName;
-  final String contentPreview;
-  final String dateStr;
-  final bool isAnonymous;
-  final bool isRead;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final initial = authorName.isEmpty ? '?' : authorName[0];
-    final avatarColors = isAnonymous
-        ? [AppColors.textTertiary, const Color(0xFFB0B8C4)]
-        : [AppColors.primaryDark, AppColors.primary];
-
-    return Container(
-      decoration: BoxDecoration(
-        color: context.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: context.cardShadowColor,
-            blurRadius: 12,
-            offset: const Offset(0, 2),
+          const SizedBox(height: 10),
+          Text(
+            contentPreview,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 14.5,
+              color: isAnonymous ? wc.anonText : wc.textSec,
+              height: 1.6,
+              letterSpacing: -0.2,
+            ),
           ),
         ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Author row
-                Row(
-                  children: [
-                    Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: avatarColors),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        authorName,
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: context.textPrimary,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                // Content
-                Expanded(
-                  child: Text(
-                    contentPreview,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.4,
-                      color: context.textSecondary,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                // Date + read
-                Row(
-                  children: [
-                    if (isRead)
-                      Container(
-                        margin: const EdgeInsets.only(right: 4),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: context.textTertiary.withAlpha(20),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                        child: Text(
-                          '읽음',
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: context.textTertiary,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: context.textTertiary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
