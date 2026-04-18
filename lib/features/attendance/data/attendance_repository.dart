@@ -19,18 +19,13 @@ class AttendanceRepository {
     return (group: group, members: members);
   }
 
-  Future<({GroupInfo group, String date, List<GroupMember> members})>
-      getWeekly(String date) async {
+  Future<WeeklyAttendance> getWeekly(String date) async {
     final response = await _apiClient.dio.get<Map<String, dynamic>>(
       Endpoints.attendanceWeekly,
       queryParameters: {'date': date},
     );
     final data = response.data!['data'] as Map<String, dynamic>;
-    final group = GroupInfo.fromJson(data['group'] as Map<String, dynamic>);
-    final members = (data['members'] as List<dynamic>)
-        .map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
-        .toList();
-    return (group: group, date: data['date'] as String, members: members);
+    return WeeklyAttendance.fromJson(data);
   }
 
   Future<void> checkAttendance({

@@ -61,3 +61,98 @@ class GroupStats {
         ratePercent: double.parse(json['rate_percent']?.toString() ?? '0'),
       );
 }
+
+/// 본인의 주일 출결 상태.
+class TodayStatus {
+  const TodayStatus({
+    required this.isPresent,
+    required this.hasRecord,
+    this.markedBy,
+    this.markedAt,
+  });
+
+  final bool isPresent;
+
+  /// 리더가 이 주차를 열어서 출결을 기록한 적이 있는지 (false면 아직 체크 전).
+  final bool hasRecord;
+  final String? markedBy;
+  final DateTime? markedAt;
+
+  factory TodayStatus.fromJson(Map<String, dynamic> json) => TodayStatus(
+        isPresent: json['isPresent'] == true,
+        hasRecord: json['hasRecord'] == true,
+        markedBy: json['markedBy'] as String?,
+        markedAt: json['markedAt'] != null
+            ? DateTime.tryParse(json['markedAt'] as String)
+            : null,
+      );
+}
+
+class HistoryEntry {
+  const HistoryEntry({required this.date, required this.isPresent});
+  final DateTime date;
+  final bool isPresent;
+
+  factory HistoryEntry.fromJson(Map<String, dynamic> json) => HistoryEntry(
+        date: DateTime.parse(json['date'] as String),
+        isPresent: json['isPresent'] == true,
+      );
+}
+
+class MyStats {
+  const MyStats({
+    required this.totalWeeks,
+    required this.presentWeeks,
+    required this.rate,
+  });
+
+  final int totalWeeks;
+  final int presentWeeks;
+  final double rate;
+
+  factory MyStats.fromJson(Map<String, dynamic> json) => MyStats(
+        totalWeeks: (json['totalWeeks'] as num).toInt(),
+        presentWeeks: (json['presentWeeks'] as num).toInt(),
+        rate: (json['rate'] as num).toDouble(),
+      );
+}
+
+/// 주간 출결 종합 — 리더/멤버 공통 응답.
+class WeeklyAttendance {
+  const WeeklyAttendance({
+    required this.isLeader,
+    required this.group,
+    required this.date,
+    required this.today,
+    required this.history,
+    required this.stats,
+    this.members,
+  });
+
+  final bool isLeader;
+  final GroupInfo group;
+  final String date;
+  final TodayStatus today;
+  final List<HistoryEntry> history;
+  final MyStats stats;
+
+  /// 리더일 때만 채워짐.
+  final List<GroupMember>? members;
+
+  factory WeeklyAttendance.fromJson(Map<String, dynamic> json) =>
+      WeeklyAttendance(
+        isLeader: json['isLeader'] == true,
+        group: GroupInfo.fromJson(json['group'] as Map<String, dynamic>),
+        date: json['date'] as String,
+        today: TodayStatus.fromJson(json['today'] as Map<String, dynamic>),
+        history: (json['history'] as List<dynamic>)
+            .map((e) => HistoryEntry.fromJson(e as Map<String, dynamic>))
+            .toList(),
+        stats: MyStats.fromJson(json['stats'] as Map<String, dynamic>),
+        members: json['members'] == null
+            ? null
+            : (json['members'] as List<dynamic>)
+                .map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
+                .toList(),
+      );
+}

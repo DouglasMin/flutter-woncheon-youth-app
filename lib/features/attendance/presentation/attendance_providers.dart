@@ -15,9 +15,9 @@ final selectedDateProvider = StateProvider<String>((ref) {
   return DateFormat('yyyy-MM-dd').format(sunday);
 });
 
-// 내 목장 주간 출석 현황
-final weeklyAttendanceProvider = FutureProvider<
-    ({GroupInfo group, String date, List<GroupMember> members})>((ref) async {
+// 주간 출결 종합 (리더/멤버 공통)
+final weeklyAttendanceProvider =
+    FutureProvider<WeeklyAttendance>((ref) async {
   final repo = ref.watch(attendanceRepositoryProvider);
   final date = ref.watch(selectedDateProvider);
   return repo.getWeekly(date);

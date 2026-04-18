@@ -9,40 +9,12 @@ import 'package:woncheon_youth/features/attendance/presentation/attendance_provi
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
-class AttendanceCheckPage extends ConsumerStatefulWidget {
+class AttendanceCheckPage extends ConsumerWidget {
   const AttendanceCheckPage({super.key});
 
   @override
-  ConsumerState<AttendanceCheckPage> createState() =>
-      _AttendanceCheckPageState();
-}
-
-class _AttendanceCheckPageState extends ConsumerState<AttendanceCheckPage> {
-  List<GroupMember> _members = [];
-  String? _currentDate;
-  bool _isSaving = false;
-  bool _saved = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final wc = context.wc;
-
-    // Sync local member state with server data via ref.listen — never mutate
-    // in build(). Whenever the date or roster size changes, reset local edits.
-    ref.listen(weeklyAttendanceProvider, (_, next) {
-      final data = next.valueOrNull;
-      if (data == null) return;
-      if (_currentDate == data.date &&
-          _members.length == data.members.length) {
-        return;
-      }
-      setState(() {
-        _members = data.members;
-        _currentDate = data.date;
-        _saved = false;
-      });
-    });
-
     final weeklyAsync = ref.watch(weeklyAttendanceProvider);
 
     return Scaffold(
@@ -54,126 +26,164 @@ class _AttendanceCheckPageState extends ConsumerState<AttendanceCheckPage> {
             onRetry: () => ref.invalidate(weeklyAttendanceProvider),
           ),
           data: (data) {
-            // First-frame fallback — if the listen above hasn't run yet.
-            final members = _currentDate == data.date ? _members : data.members;
-            final presentCount =
-                members.where((m) => m.isPresent).length;
-            final parsed = DateTime.parse(data.date);
-            final dateLabel =
-                DateFormat('yyyy년 M월 d일 (E)', 'ko').format(parsed);
-
-            return Stack(
-              children: [
-                Column(
-                  children: [
-                    _Header(date: dateLabel, groupName: data.group.name),
-                    _SummaryCard(
-                      present: presentCount,
-                      total: members.length,
-                      onMarkAll: _markAll,
-                      onClearAll: _clearAll,
-                    ),
-                    const _WeekNav(),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
-                      child: Row(
-                        children: [
-                          Text(
-                            '목원 ${members.length}명',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: wc.textSec,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
-                          const Spacer(),
-                          Text(
-                            '탭해서 체크',
-                            style:
-                                TextStyle(fontSize: 11, color: wc.textTer),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
-                        child: GridView.builder(
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
-                            mainAxisExtent: 108,
-                          ),
-                          itemCount: members.length,
-                          itemBuilder: (context, index) {
-                            final member = members[index];
-                            return _MemberTile(
-                              member: member,
-                              onToggle: () => _toggleMember(index, member),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Positioned(
-                  left: 16,
-                  right: 16,
-                  bottom: 24 + MediaQuery.of(context).padding.bottom,
-                  child: _ConfirmButton(
-                    present: presentCount,
-                    total: members.length,
-                    saved: _saved,
-                    isSaving: _isSaving,
-                    onTap: _save,
-                  ),
-                ),
-                Positioned(
-                  left: 0,
-                  top: 8,
-                  child: IconButton(
-                    onPressed: () => context.pop(),
-                    icon: Icon(
-                      FluentIcons.chevron_left_24_regular,
-                      color: wc.text,
-                    ),
-                  ),
-                ),
-              ],
-            );
+            if (data.isLeader) {
+              return _LeaderView(data: data);
+            }
+            return _MemberView(data: data);
           },
         ),
       ),
+    );
+  }
+}
+
+// ───────────────────────────────────────────────────────────
+// Leader view — 기존 출석 체크 UI
+// ───────────────────────────────────────────────────────────
+
+class _LeaderView extends ConsumerStatefulWidget {
+  const _LeaderView({required this.data});
+  final WeeklyAttendance data;
+
+  @override
+  ConsumerState<_LeaderView> createState() => _LeaderViewState();
+}
+
+class _LeaderViewState extends ConsumerState<_LeaderView> {
+  List<GroupMember> _members = [];
+  String? _syncedDate;
+  bool _isSaving = false;
+  bool _saved = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+
+    // 서버 데이터를 로컬 편집 상태로 동기화 (주일/로스터 변경 시).
+    ref.listen(weeklyAttendanceProvider, (_, next) {
+      final fresh = next.valueOrNull;
+      final roster = fresh?.members;
+      if (fresh == null || roster == null) return;
+      if (_syncedDate == fresh.date &&
+          _members.length == roster.length) {
+        return;
+      }
+      setState(() {
+        _members = roster;
+        _syncedDate = fresh.date;
+        _saved = false;
+      });
+    });
+
+    final roster = widget.data.members ?? const <GroupMember>[];
+    final members =
+        _syncedDate == widget.data.date ? _members : roster;
+    final presentCount = members.where((m) => m.isPresent).length;
+    final parsed = DateTime.parse(widget.data.date);
+    final dateLabel = DateFormat('yyyy년 M월 d일 (E)', 'ko').format(parsed);
+
+    return Stack(
+      children: [
+        Column(
+          children: [
+            _LeaderHeader(date: dateLabel, groupName: widget.data.group.name),
+            _SummaryCard(
+              present: presentCount,
+              total: members.length,
+              onMarkAll: () => _markAll(members),
+              onClearAll: () => _clearAll(members),
+            ),
+            const _WeekNav(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 18, 24, 6),
+              child: Row(
+                children: [
+                  Text(
+                    '목원 ${members.length}명',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: wc.textSec,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '탭해서 체크',
+                    style: TextStyle(fontSize: 11, color: wc.textTer),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 180),
+                child: GridView.builder(
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    mainAxisExtent: 108,
+                  ),
+                  itemCount: members.length,
+                  itemBuilder: (context, index) {
+                    final member = members[index];
+                    return _MemberTile(
+                      member: member,
+                      onToggle: () => _toggleMember(index, member),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
+        Positioned(
+          left: 16,
+          right: 16,
+          bottom: 24 + MediaQuery.of(context).padding.bottom,
+          child: _ConfirmButton(
+            present: presentCount,
+            total: members.length,
+            saved: _saved,
+            isSaving: _isSaving,
+            onTap: _save,
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 8,
+          child: IconButton(
+            onPressed: () => context.pop(),
+            icon: Icon(FluentIcons.chevron_left_24_regular, color: wc.text),
+          ),
+        ),
+      ],
     );
   }
 
   void _toggleMember(int index, GroupMember member) {
     Haptic.selection();
     setState(() {
-      _members = List.of(_members)
+      _members = List.of(_members.isNotEmpty ? _members : widget.data.members!)
         ..[index] = member.copyWith(isPresent: !member.isPresent);
       _saved = false;
     });
   }
 
-  void _markAll() {
+  void _markAll(List<GroupMember> members) {
     Haptic.selection();
     setState(() {
-      _members =
-          _members.map((m) => m.copyWith(isPresent: true)).toList();
+      _members = members.map((m) => m.copyWith(isPresent: true)).toList();
       _saved = false;
     });
   }
 
-  void _clearAll() {
+  void _clearAll(List<GroupMember> members) {
     Haptic.selection();
     setState(() {
-      _members =
-          _members.map((m) => m.copyWith(isPresent: false)).toList();
+      _members = members.map((m) => m.copyWith(isPresent: false)).toList();
       _saved = false;
     });
   }
@@ -192,6 +202,8 @@ class _AttendanceCheckPageState extends ConsumerState<AttendanceCheckPage> {
             .toList(),
       );
       await Haptic.light();
+      // 서버 데이터를 다시 받아 본인/목원 화면 즉시 반영
+      ref.invalidate(weeklyAttendanceProvider);
       if (mounted) setState(() => _saved = true);
     } on Exception {
       if (mounted) {
@@ -204,6 +216,447 @@ class _AttendanceCheckPageState extends ConsumerState<AttendanceCheckPage> {
     }
   }
 }
+
+// ───────────────────────────────────────────────────────────
+// Member view — read-only 본인 출석 상태
+// ───────────────────────────────────────────────────────────
+
+class _MemberView extends ConsumerWidget {
+  const _MemberView({required this.data});
+  final WeeklyAttendance data;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wc = context.wc;
+    final parsed = DateTime.parse(data.date);
+    final dateLabel = DateFormat('yyyy년 M월 d일 (E)', 'ko').format(parsed);
+    final isSunday = parsed.weekday == DateTime.sunday;
+    final todayIsoDate = DateTime.now()
+            .toUtc()
+            .toIso8601String()
+            .substring(0, 10) ==
+        data.date;
+
+    return Stack(
+      children: [
+        RefreshIndicator(
+          color: wc.accent,
+          onRefresh: () async {
+            ref.invalidate(weeklyAttendanceProvider);
+            await ref.read(weeklyAttendanceProvider.future);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.only(bottom: 120),
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 36, 24, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      dateLabel,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: wc.textTer,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '내 출석',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        color: wc.text,
+                        letterSpacing: -0.6,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    WCPill(child: Text('${data.group.name} 목장')),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _TodayStatusCard(
+                  today: data.today,
+                  isSunday: isSunday && todayIsoDate,
+                ),
+              ),
+              _SectionHeader(text: '최근 4주'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _HistoryRow(
+                  history: data.history,
+                  currentDate: data.date,
+                ),
+              ),
+              _SectionHeader(text: '이번 분기'),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: _StatsCard(stats: data.stats),
+              ),
+            ],
+          ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          top: 8,
+          child: IconButton(
+            onPressed: () => context.pop(),
+            icon: Icon(FluentIcons.chevron_left_24_regular, color: wc.text),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TodayStatusCard extends StatelessWidget {
+  const _TodayStatusCard({required this.today, required this.isSunday});
+  final TodayStatus today;
+  final bool isSunday;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+
+    // 3-state: 평일 / 주일+출석 / 주일+미체크
+    if (!isSunday) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        decoration: BoxDecoration(
+          color: wc.surface,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: wc.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '다음 주일',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: wc.textTer,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '주일 예배에서 만나요',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: wc.text,
+                letterSpacing: -0.4,
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '출석은 목장 리더가 예배 시간에 체크해요.\n내가 직접 누르지 않아도 돼요.',
+              style: TextStyle(
+                fontSize: 13,
+                color: wc.textSec,
+                height: 1.6,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (today.isPresent) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        decoration: BoxDecoration(
+          color: wc.accentSoft,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: wc.accent,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(FluentIcons.checkmark_24_regular,
+                      size: 22, color: wc.bg),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '출석 완료',
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                    color: wc.accentInk,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '오늘 예배 출석이\n기록되었어요',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: wc.accentInk,
+                letterSpacing: -0.5,
+                height: 1.35,
+              ),
+            ),
+            if (today.markedBy != null || today.markedAt != null) ...[
+              const SizedBox(height: 10),
+              Text(
+                _markedByLine(today),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: wc.accentInk.withValues(alpha: 0.7),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    // 주일 + 아직 체크 안 됨
+    return Container(
+      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+      decoration: BoxDecoration(
+        color: wc.surface,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: wc.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '아직 체크되지 않음',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: wc.textTer,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '리더가 곧 체크해줄 거예요',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: wc.text,
+              letterSpacing: -0.4,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '이미 예배에 왔다면 목장 리더에게 알려주세요.',
+            style: TextStyle(
+              fontSize: 13,
+              color: wc.textSec,
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _markedByLine(TodayStatus today) {
+    final parts = <String>[];
+    if (today.markedBy != null) parts.add('${today.markedBy} 리더');
+    if (today.markedAt != null) {
+      parts.add(DateFormat('HH:mm').format(today.markedAt!.toLocal()));
+    }
+    return parts.isEmpty ? '' : '${parts.join(' · ')} 체크';
+  }
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.history, required this.currentDate});
+  final List<HistoryEntry> history;
+  final String currentDate;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+    return Row(
+      children: [
+        for (final e in history) ...[
+          Expanded(
+            child: _HistoryCell(
+              entry: e,
+              isCurrent: DateFormat('yyyy-MM-dd').format(e.date) ==
+                  currentDate,
+            ),
+          ),
+          if (e != history.last) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+
+  static DateFormat get _fmt => DateFormat('yyyy-MM-dd');
+}
+
+class _HistoryCell extends StatelessWidget {
+  const _HistoryCell({required this.entry, required this.isCurrent});
+  final HistoryEntry entry;
+  final bool isCurrent;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+    final ok = entry.isPresent;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        color: isCurrent && ok ? wc.accentSoft : wc.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isCurrent ? wc.accent : wc.border,
+        ),
+      ),
+      child: Column(
+        children: [
+          Text(
+            '${entry.date.month}/${entry.date.day}',
+            style: TextStyle(fontSize: 11, color: wc.textTer),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            ok ? '✓' : '—',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: ok ? wc.accent : wc.textTer,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatsCard extends StatelessWidget {
+  const _StatsCard({required this.stats});
+  final MyStats stats;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+    final ratio = (stats.rate / 100).clamp(0.0, 1.0);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: BoxDecoration(
+        color: wc.surface,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: wc.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '출석률',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: wc.textSec,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                stats.rate.toStringAsFixed(stats.rate % 1 == 0 ? 0 : 1),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: wc.text,
+                  letterSpacing: -0.6,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+              Text(
+                '%',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: wc.textTer,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: Stack(
+              children: [
+                Container(height: 6, color: wc.surfaceAlt),
+                FractionallySizedBox(
+                  widthFactor: ratio,
+                  child: Container(
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: wc.accent,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '최근 ${stats.totalWeeks}주 중 ${stats.presentWeeks}주 출석',
+            style: TextStyle(fontSize: 11.5, color: wc.textTer),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 10),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: wc.textSec,
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────────────────────────────────────────────────
+// Shared sub-widgets (leader side)
+// ───────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   const _ErrorView({required this.onRetry});
@@ -235,8 +688,8 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.date, required this.groupName});
+class _LeaderHeader extends StatelessWidget {
+  const _LeaderHeader({required this.date, required this.groupName});
   final String date;
   final String groupName;
 
@@ -350,16 +803,10 @@ class _SummaryCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _SummaryActionBtn(
-                  label: '전체 출석',
-                  filled: true,
-                  onTap: onMarkAll,
-                ),
+                    label: '전체 출석', filled: true, onTap: onMarkAll),
                 const SizedBox(height: 6),
                 _SummaryActionBtn(
-                  label: '초기화',
-                  filled: false,
-                  onTap: onClearAll,
-                ),
+                    label: '초기화', filled: false, onTap: onClearAll),
               ],
             ),
           ],
