@@ -26,6 +26,8 @@ class PrayerDetail with _$PrayerDetail {
     required String content,
     required String createdAt,
     required bool isMine,
+    // 익명 게시물은 null. 실명 게시물의 차단 기능에 사용.
+    String? authorMemberId,
   }) = _PrayerDetail;
 
   factory PrayerDetail.fromJson(Map<String, dynamic> json) =>

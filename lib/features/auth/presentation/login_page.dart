@@ -8,6 +8,7 @@ import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
+import 'package:woncheon_youth/features/member/presentation/block_providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
@@ -65,6 +66,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       final isFirstLogin = data['isFirstLogin'] as bool? ?? false;
 
       if (!mounted) return;
+
+      // 최신 차단 목록이 secure storage에 저장됐으므로 provider 재빌드 트리거
+      ref.invalidate(blocklistProvider);
 
       if (isFirstLogin) {
         context.go(AppRoutes.changePassword);

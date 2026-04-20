@@ -7,6 +7,7 @@ import 'package:woncheon_youth/features/auth/presentation/change_password_page.d
 import 'package:woncheon_youth/features/auth/presentation/login_page.dart';
 import 'package:woncheon_youth/features/auth/presentation/register_request_page.dart';
 import 'package:woncheon_youth/features/home/presentation/home_page.dart';
+import 'package:woncheon_youth/features/member/presentation/blocks_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_create_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_detail_page.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_list_page.dart';
@@ -31,6 +32,7 @@ abstract final class AppRoutes {
   static const prayerCreate = '/prayers/create';
   static String prayerDetail(String id) => '/prayers/$id';
   static const attendanceStats = '/attendance/stats';
+  static const blocks = '/settings/blocks';
 }
 
 final _rootKey = GlobalKey<NavigatorState>();
@@ -136,6 +138,13 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.settings,
                 builder: (_, __) => const SettingsPage(),
+                routes: [
+                  GoRoute(
+                    path: 'blocks',
+                    parentNavigatorKey: _rootKey,
+                    builder: (_, __) => const BlocksPage(),
+                  ),
+                ],
               ),
             ],
           ),

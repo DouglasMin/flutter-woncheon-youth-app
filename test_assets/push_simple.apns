@@ -1,0 +1,10 @@
+{
+  "Simulator Target Bundle": "com.woncheon.woncheonYouth",
+  "aps": {
+    "alert": {
+      "title": "원천청년부",
+      "body": "테스트 알림입니다."
+    },
+    "sound": "default"
+  }
+}

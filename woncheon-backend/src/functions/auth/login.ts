@@ -65,6 +65,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     member: {
       memberId: member.memberId,
       name: member.name,
+      blockedMembers: member.blockedMembers ?? [],
     },
   });
 };

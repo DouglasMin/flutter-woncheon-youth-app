@@ -21,4 +21,8 @@ abstract final class Endpoints {
   static const String attendanceCheck = '/attendance/check';
   static const String attendanceWeekly = '/attendance/weekly';
   static const String attendanceStats = '/attendance/stats';
+
+  // Blocks (UGC 차단 — App Store Guideline 1.2)
+  static const String myBlocks = '/me/blocks';
+  static String unblock(String memberId) => '/me/blocks/$memberId';
 }

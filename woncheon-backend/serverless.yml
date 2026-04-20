@@ -124,6 +124,33 @@ functions:
             identitySource: method.request.header.Authorization
             type: request
 
+  # ── Blocks (UGC 차단 — App Store Guideline 1.2) ──
+  blockMember:
+    handler: src/functions/member/block.handler
+    events:
+      - http:
+          path: /me/blocks
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  unblockMember:
+    handler: src/functions/member/unblock.handler
+    events:
+      - http:
+          path: /me/blocks/{memberId}
+          method: delete
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
   # ── Report ─────────────────────────────────
   createReport:
     handler: src/functions/report/create.handler

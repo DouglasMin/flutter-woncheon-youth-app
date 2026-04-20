@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
+import 'package:woncheon_youth/features/member/presentation/block_providers.dart';
 import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
@@ -97,18 +98,11 @@ class PrayerDetailPage extends ConsumerWidget {
                                     size: 18,
                                   ),
                                 )
-                              : IconButton(
-                                  onPressed: () => showReportDialog(
-                                    context: context,
-                                    apiClient: ref.read(apiClientProvider),
-                                    targetType: 'prayer',
-                                    targetId: prayer.prayerId,
-                                  ),
-                                  icon: Icon(
-                                    FluentIcons.flag_24_regular,
-                                    color: wc.textTer,
-                                    size: 18,
-                                  ),
+                              : _OtherUserMenu(
+                                  prayerId: prayer.prayerId,
+                                  authorMemberId: prayer.authorMemberId,
+                                  authorName: prayer.authorName,
+                                  isAnonymous: prayer.isAnonymous,
                                 ),
                         ),
                         const SizedBox(height: 14),
@@ -662,6 +656,111 @@ class _CommentTile extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _OtherUserMenu extends ConsumerWidget {
+  const _OtherUserMenu({
+    required this.prayerId,
+    required this.authorMemberId,
+    required this.authorName,
+    required this.isAnonymous,
+  });
+
+  final String prayerId;
+  final String? authorMemberId;
+  final String authorName;
+  final bool isAnonymous;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final wc = context.wc;
+    return PopupMenuButton<String>(
+      icon: Icon(
+        FluentIcons.more_horizontal_24_regular,
+        color: wc.textTer,
+        size: 20,
+      ),
+      tooltip: '옵션',
+      onSelected: (value) async {
+        switch (value) {
+          case 'report':
+            await showReportDialog(
+              context: context,
+              apiClient: ref.read(apiClientProvider),
+              targetType: 'prayer',
+              targetId: prayerId,
+            );
+          case 'block':
+            await _handleBlock(context, ref);
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem(
+          value: 'report',
+          child: Row(
+            children: [
+              Icon(FluentIcons.flag_24_regular, size: 18, color: wc.textSec),
+              const SizedBox(width: 10),
+              const Text('신고'),
+            ],
+          ),
+        ),
+        // 익명 게시물에는 차단 메뉴 숨김 (누가 썼는지 모름)
+        if (!isAnonymous && authorMemberId != null)
+          PopupMenuItem(
+            value: 'block',
+            child: Row(
+              children: [
+                Icon(
+                  FluentIcons.person_prohibited_24_regular,
+                  size: 18,
+                  color: wc.danger,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  '이 사용자 차단',
+                  style: TextStyle(color: wc.danger),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Future<void> _handleBlock(BuildContext context, WidgetRef ref) async {
+    if (authorMemberId == null) return;
+
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: '$authorName 님 차단',
+      content: '이 사용자의 기도/댓글이 더 이상 보이지 않습니다.\n'
+          '설정 > 차단 관리에서 해제할 수 있습니다.',
+      confirmText: '차단',
+      isDestructive: true,
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    try {
+      await ref
+          .read(blocklistProvider.notifier)
+          .block(authorMemberId!);
+      if (!context.mounted) return;
+      // 기도 목록/상세 캐시 갱신 — 차단한 사용자 글이 즉시 사라지도록
+      ref.invalidate(prayerListProvider);
+      ref.invalidate(commentsProvider(prayerId));
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$authorName 님을 차단했습니다.')),
+      );
+    } on DioException {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('차단에 실패했습니다.')),
+        );
+      }
+    }
   }
 }
 

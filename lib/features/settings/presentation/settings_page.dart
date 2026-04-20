@@ -2,9 +2,11 @@ import 'package:dio/dio.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/api/auth_event_bus.dart';
+import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
@@ -36,6 +38,32 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final uri =
         Uri.parse('https://douglasmin.github.io/flutter-woncheon-youth-app/');
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  Future<void> _openSupportEmail() async {
+    final uri = Uri(
+      scheme: 'mailto',
+      path: 'dongik.dev73@gmail.com',
+      queryParameters: {
+        'subject': '[원천청년부 앱] 문의',
+      },
+    );
+    if (!await launchUrl(uri)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('메일 앱을 열 수 없습니다.')),
+      );
+    }
+  }
+
+  Future<void> _openSupportPhone() async {
+    final uri = Uri(scheme: 'tel', path: '+821044140703');
+    if (!await launchUrl(uri)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('전화 앱을 열 수 없습니다.')),
+      );
+    }
   }
 
   Future<void> _handleLogout() async {
@@ -164,8 +192,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
               ),
             ),
+            const SectionLabel('지원'),
+            _Group(items: [
+              _Row(
+                icon: FluentIcons.mail_24_regular,
+                label: '문의 이메일',
+                trailing: Text(
+                  'dongik.dev73@gmail.com',
+                  style: TextStyle(fontSize: 11, color: wc.textTer),
+                ),
+                onTap: _openSupportEmail,
+              ),
+              _Row(
+                icon: FluentIcons.call_24_regular,
+                label: '문의 전화',
+                trailing: Text(
+                  '010-4414-0703',
+                  style: TextStyle(fontSize: 11, color: wc.textTer),
+                ),
+                onTap: _openSupportPhone,
+              ),
+            ]),
             const SectionLabel('계정'),
             _Group(items: [
+              _Row(
+                icon: FluentIcons.person_prohibited_24_regular,
+                label: '차단 관리',
+                onTap: () => context.push(AppRoutes.blocks),
+              ),
               _Row(
                 icon: FluentIcons.shield_24_regular,
                 label: '개인정보 처리방침',

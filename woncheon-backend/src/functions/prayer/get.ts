@@ -28,6 +28,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   return success({
     prayerId: prayer.prayerId,
+    // 익명 게시물은 authorMemberId 노출 안 함 (anonymity 유지).
+    // 실명 게시물에만 memberId를 포함해서 클라이언트가 차단 가능하게.
+    authorMemberId: prayer.isAnonymous ? null : prayer.memberId,
     authorName: prayer.authorName,
     isAnonymous: prayer.isAnonymous,
     content: prayer.content,

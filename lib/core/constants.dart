@@ -17,6 +17,7 @@ abstract final class AppConstants {
   static const String refreshTokenKey = 'refresh_token';
   static const String memberIdKey = 'member_id';
   static const String memberNameKey = 'member_name';
+  static const String blockedMembersKey = 'blocked_members';
 
   // Pagination
   static const int defaultPageSize = 10;
