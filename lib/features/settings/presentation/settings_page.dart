@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/api/auth_event_bus.dart';
+import 'package:woncheon_youth/core/api/endpoints.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
@@ -62,6 +63,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('전화 앱을 열 수 없습니다.')),
+      );
+    }
+  }
+
+  Future<void> _sendTestNotification() async {
+    await Haptic.light();
+    try {
+      final response = await ref
+          .read(apiClientProvider)
+          .dio
+          .post<Map<String, dynamic>>(Endpoints.notificationTest);
+      final data = response.data?['data'] as Map<String, dynamic>?;
+      final sent = data?['sent'] as int? ?? 0;
+      final total = data?['total'] as int? ?? 0;
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('테스트 푸시 요청 완료 ($sent/$total 기기). '
+              '몇 초 내 알림이 도착하지 않으면 앱이 포그라운드에 있는지 확인.'),
+          duration: const Duration(seconds: 5),
+        ),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = getApiErrorMessage(e, fallback: '테스트 푸시에 실패했습니다.');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
       );
     }
   }
@@ -211,6 +239,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   style: TextStyle(fontSize: 11, color: wc.textTer),
                 ),
                 onTap: _openSupportPhone,
+              ),
+              _Row(
+                icon: FluentIcons.alert_24_regular,
+                label: '테스트 알림 받기',
+                trailing: Text(
+                  '내 기기로',
+                  style: TextStyle(fontSize: 11, color: wc.textTer),
+                ),
+                onTap: _sendTestNotification,
               ),
             ]),
             const SectionLabel('계정'),

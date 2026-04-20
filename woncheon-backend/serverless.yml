@@ -358,6 +358,19 @@ functions:
           rate: cron(0 11 ? * SAT *)
           enabled: true
 
+  sendTestNotification:
+    handler: src/functions/notification/sendTest.handler
+    events:
+      - http:
+          path: /notifications/test
+          method: post
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
 resources:
   Resources:
     WoncheonTable:

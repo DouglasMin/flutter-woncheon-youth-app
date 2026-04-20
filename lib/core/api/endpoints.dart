@@ -25,4 +25,7 @@ abstract final class Endpoints {
   // Blocks (UGC 차단 — App Store Guideline 1.2)
   static const String myBlocks = '/me/blocks';
   static String unblock(String memberId) => '/me/blocks/$memberId';
+
+  // Notification
+  static const String notificationTest = '/notifications/test';
 }

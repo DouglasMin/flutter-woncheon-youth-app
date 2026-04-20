@@ -210,16 +210,190 @@ App Store Connect → Age Rating 설문. 아래대로 응답.
 
 ---
 
-## 5. Build 업로드 전 체크리스트
+## 5. End-to-End 배포 플로우 (Apple Developer 활성화 후)
 
-- [ ] `pubspec.yaml`의 version + build number 올림 (예: `1.0.0+1`)
-- [ ] `kMockMode = false` 확인
-- [ ] API URL이 **dev가 아닌 prod**를 가리키게 `--dart-define=ENV=prod` 빌드
-- [ ] Runner.entitlements에 `aps-environment: production` 설정 (APNs Key 발급 후)
-- [ ] Xcode에서 Archive → Distribute → App Store Connect 업로드
-- [ ] App Store Connect에서 빌드 선택 + 위 4개 섹션 모두 채움
-- [ ] 스크린샷 업로드 (6.9" iPhone, 6.5" iPhone 최소 각 3장)
-- [ ] **Submit for Review**
+전체 소요 시간: 반나절 ~ 1일 (Xcode 빌드 + 업로드 + propagation 포함)
+
+### Phase 1 — Apple Developer Console
+
+```
+developer.apple.com → Certificates, IDs & Profiles
+```
+
+**1-1. Bundle ID 등록 (Identifiers)**
+- `+` → App IDs → App → Continue
+- Description: `Woncheon Youth`
+- Bundle ID: Explicit → `com.woncheon.woncheonYouth`
+- Capabilities: **Push Notifications** 체크
+- Continue → Register
+
+**1-2. APNs Auth Key (.p8) 발급 (Keys)**
+- `+` → Key Name: `Woncheon Youth APNs`
+- Enable: **Apple Push Notifications service (APNs)** 체크
+- Continue → Register
+- **`.p8` 파일 다운로드 — 한 번만 받을 수 있음. 안전한 곳에 백업**
+- Key ID 기록 (10자리), Team ID 기록 (Membership 탭)
+
+### Phase 2 — AWS SNS Platform Application
+
+**AWS Console → SNS (ap-northeast-2) → Mobile → Push notifications → Create platform application**
+
+**dev (sandbox) 용:**
+- Name: `woncheon-youth-ios-dev`
+- Platform: **Apple iOS/VoIP Services** + **Use for development in sandbox** 체크
+- Authentication method: Token (권장)
+- Signing key: .p8 파일 내용 전체 붙여넣기
+- Signing key ID: (Phase 1-2에서 기록한 Key ID)
+- Team ID: (Team ID)
+- Bundle ID: `com.woncheon.woncheonYouth`
+- Create
+- → 생성된 Platform ARN 복사 (예: `arn:aws:sns:ap-northeast-2:863518440691:app/APNS_SANDBOX/woncheon-youth-ios-dev`)
+
+**prod 용:**
+- 동일 절차 but 이름은 `woncheon-youth-ios-prod`
+- **Use for development in sandbox 체크 해제** (= production APNS)
+
+### Phase 3 — SSM 파라미터 (SNS ARN 등록)
+
+```bash
+# dev
+AWS_PROFILE=dongik2 aws ssm put-parameter \
+  --region ap-northeast-2 \
+  --name "/woncheon/dev/sns-ios-arn" \
+  --value "arn:aws:sns:ap-northeast-2:863518440691:app/APNS_SANDBOX/woncheon-youth-ios-dev" \
+  --type String --overwrite
+
+# prod
+AWS_PROFILE=dongik2 aws ssm put-parameter \
+  --region ap-northeast-2 \
+  --name "/woncheon/prod/sns-ios-arn" \
+  --value "arn:aws:sns:ap-northeast-2:863518440691:app/APNS/woncheon-youth-ios-prod" \
+  --type String --overwrite
+```
+
+이후 Lambda 재배포 필요 (환경 변수로 ARN 주입되므로):
+```bash
+cd woncheon-backend && AWS_PROFILE=dongik2 pnpm deploy:dev
+```
+
+### Phase 4 — iOS 프로젝트 설정
+
+```bash
+open ios/Runner.xcworkspace
+```
+
+- **Signing & Capabilities** 탭
+  - Team: 본인 Apple Developer 팀 선택
+  - Automatically manage signing 체크 (간편)
+  - **+ Capability** → "Push Notifications" 추가
+- **Runner.entitlements** 확인:
+  - dev 빌드: `aps-environment: development`
+  - prod/TestFlight 빌드: `aps-environment: production`
+
+### Phase 5 — 실기기 푸시 테스트 (dev)
+
+1. 본인 iPhone USB 연결 + "이 컴퓨터 신뢰" 승인
+2. Xcode에서 본인 디바이스 선택 or `flutter devices`에서 확인
+3. `flutter run -d <device-id>`
+4. 앱 실행 → 로그인 → 알림 권한 허용
+5. 디바이스 토큰이 SSN에 등록되는지 확인:
+   - Xcode console에서 `[Push] APNs token received` 같은 로그
+   - AWS SNS → Platform applications → 해당 app → **Endpoints** 목록에 추가됐는지
+6. **앱 내 설정 → "테스트 알림 받기"** 버튼 탭
+7. 몇 초 내 알림 배너 도착 확인
+8. 앱 백그라운드로 보낸 후 (Cmd+Shift+H 해당하는 제스처) 다시 테스트 → 락스크린 푸시 확인
+9. 푸시 탭 시 기도 리스트로 딥링크 이동 확인
+
+### Phase 6 — prod 백엔드 배포
+
+```bash
+# DB 마이그레이션 (prod PG가 dev와 같은 Supabase면 스킵. 분리했으면 필요)
+# 현재는 dev Supabase 공유 방침
+
+cd woncheon-backend && AWS_PROFILE=dongik2 pnpm deploy:prod
+```
+
+배포 후 prod API Gateway URL 복사 (콘솔 출력에서):
+예: `https://abcd1234ef.execute-api.ap-northeast-2.amazonaws.com/prod`
+
+`lib/core/constants.dart`의 `apiBaseUrlProd` 업데이트:
+```dart
+static const String apiBaseUrlProd =
+    'https://abcd1234ef.execute-api.ap-northeast-2.amazonaws.com/prod';
+```
+
+### Phase 7 — 데이터 정리 (prod 첫 출시 전 1회)
+
+Dev Supabase를 prod로 재사용 중이므로 test 데이터 정리:
+
+```sql
+-- test 출석 기록 삭제 (557건)
+DELETE FROM attendance;
+-- groups, group_members는 실 청년부 데이터이므로 유지
+```
+
+DynamoDB는 `woncheon-prod` 테이블이 배포 시 새로 생성되므로 자동으로 깨끗함.
+
+테스트 계정 비밀번호 초기화:
+```bash
+# 민동익, 김지현, 조은주, 조성주를 isFirstLogin: true 로 리셋
+# scripts/reset-test-passwords.ts (작성 필요)
+```
+
+### Phase 8 — Flutter prod 빌드
+
+**`pubspec.yaml` version 업데이트:**
+```yaml
+version: 1.0.0+1
+```
+
+**prod 아카이브:**
+```bash
+flutter build ipa --release --dart-define=ENV=prod
+```
+
+`build/ios/ipa/*.ipa` 생성됨.
+
+또는 Xcode로:
+- Product → Scheme → Edit Scheme → Run → Arguments → Arguments Passed On Launch: `--dart-define=ENV=prod`
+- Product → Archive
+- Window → Organizer → Distribute App → App Store Connect → Upload
+
+### Phase 9 — App Store Connect 앱 생성 + 메타데이터
+
+[https://appstoreconnect.apple.com](https://appstoreconnect.apple.com) → My Apps → `+` → New App
+
+- Platforms: iOS
+- Name: 원천청년부
+- Primary language: Korean
+- Bundle ID: `com.woncheon.woncheonYouth`
+- SKU: `woncheon-youth-001` (임의, 고유)
+- User Access: Full Access
+
+생성 후 이 문서의 섹션 1~4 참고해서 모든 필드 입력.
+
+### Phase 10 — TestFlight 내부 테스트 (권장)
+
+- TestFlight 탭 → Internal Testing → 테스터 추가 (이메일)
+- 자신 + 청년부 리더 3~5명
+- 빌드 선택 → 그룹에 배포
+- 테스터가 TestFlight 앱에서 원천청년부 설치 → 실사용 테스트 1~2일
+- 중대한 버그 없으면 다음 단계
+
+### Phase 11 — Submit for Review
+
+- App Store Connect → 버전 페이지
+- "Submit for Review" 버튼
+- Export Compliance 등 마지막 질문:
+  - "Does your app use encryption?" → **No** (HTTPS만 사용, 자체 암호화 알고리즘 없음)
+- 제출 완료
+
+### Phase 12 — 심사 진행 중
+
+- 일반적 소요: **24~48시간** (첫 제출은 더 걸릴 수 있음)
+- Resolution Center에 피드백/거부 사유 오면 대응 (섹션 6 참고)
+- 승인되면 "Ready for Sale" 상태
+- Release 타입에 따라 즉시/수동/예약 출시
 
 ---
 
