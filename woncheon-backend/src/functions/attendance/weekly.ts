@@ -91,15 +91,60 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   const totalWeeks = 12;
   const rate = Math.round((presentWeeks / totalWeeks) * 1000) / 10;
 
-  // 5. 리더일 때만 목장 전체 roster 조회
+  // 5. 목장 전체 roster — 리더/멤버 공통.
+  // 리더일 때만 각 멤버의 최근 12주 출석률도 함께 반환해서
+  // "목원별 출석률 한눈에" UI를 만들 수 있게 한다.
   let members: Array<{
     member_id: string;
     member_name: string;
     note: string | null;
     is_present: boolean;
-  }> | null = null;
+    present_weeks?: number;
+    total_weeks?: number;
+    rate?: number;
+  }>;
 
   if (isLeader) {
+    const membersResult = await pool.query<{
+      member_id: string;
+      member_name: string;
+      note: string | null;
+      is_present: boolean;
+      present_weeks: string;
+    }>(
+      `SELECT gm.member_id,
+              gm.member_name,
+              gm.note,
+              COALESCE(a.is_present, FALSE) AS is_present,
+              (
+                SELECT COUNT(*) FILTER (WHERE a2.is_present = TRUE)
+                FROM attendance a2
+                WHERE a2.member_id = gm.member_id
+                  AND a2.attendance_date > ($2::date - INTERVAL '84 days')
+                  AND a2.attendance_date <= $2::date
+              ) AS present_weeks
+       FROM group_members gm
+       LEFT JOIN attendance a
+         ON gm.member_id = a.member_id
+         AND a.group_id = gm.group_id
+         AND a.attendance_date = $2
+       WHERE gm.group_id = $1
+       ORDER BY gm.member_name`,
+      [group_id, date],
+    );
+    members = membersResult.rows.map((r) => {
+      const pw = Number(r.present_weeks);
+      return {
+        member_id: r.member_id,
+        member_name: r.member_name,
+        note: r.note,
+        is_present: r.is_present,
+        present_weeks: pw,
+        total_weeks: 12,
+        rate: Math.round((pw / 12) * 1000) / 10,
+      };
+    });
+  } else {
     const membersResult = await pool.query<{
       member_id: string;
       member_name: string;

@@ -74,9 +74,10 @@ flutter:
           weight: 700
 
 flutter_native_splash:
-  color: "#0A0E2A"
+  # Serene 팔레트와 일치 — Flutter SplashPage로 자연스럽게 이어지게
+  color: "#F4F1EB"
+  color_dark: "#16140F"
   image: assets/images/woncheon_lgo.png
-  color_dark: "#0A0E2A"
   image_dark: assets/images/woncheon_lgo.png
   ios: true
   android: true

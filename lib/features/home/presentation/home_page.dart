@@ -241,9 +241,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _QuickTile(
-                        icon: FluentIcons.calendar_24_regular,
-                        title: '출석 체크',
-                        subtitle: isSunday ? '오늘 주일이에요' : '주일에 가능',
+                        icon: FluentIcons.people_24_regular,
+                        title: '우리 목장',
+                        subtitle: isSunday ? '오늘 주일이에요' : '목장원과 기도해요',
                         accent: isSunday,
                         onTap: () {
                           Haptic.light();

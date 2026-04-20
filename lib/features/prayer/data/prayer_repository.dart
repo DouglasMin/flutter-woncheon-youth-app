@@ -14,11 +14,15 @@ class PrayerRepository {
     String? cursor,
     String? startDate,
     String? endDate,
+    List<String>? memberIds,
   }) async {
     final queryParams = <String, dynamic>{'limit': limit};
     if (cursor != null) queryParams['cursor'] = cursor;
     if (startDate != null) queryParams['startDate'] = startDate;
     if (endDate != null) queryParams['endDate'] = endDate;
+    if (memberIds != null && memberIds.isNotEmpty) {
+      queryParams['memberIds'] = memberIds.join(',');
+    }
 
     final response = await _apiClient.dio.get<Map<String, dynamic>>(
       Endpoints.prayers,

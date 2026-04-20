@@ -24,6 +24,11 @@ class PushNotificationService {
     try {
       final result = await _channel.invokeMethod<bool>('requestPermission');
       return result ?? false;
+    } on MissingPluginException catch (e) {
+      // Android 쪽 네이티브 구현이 없을 때 등 (FCM 미구현 상태).
+      // APNs Key + SNS 연동이 끝나기 전까지는 예상된 상황이므로 silent.
+      debugPrint('Push channel not available on this platform: $e');
+      return false;
     } on PlatformException catch (e) {
       debugPrint('Push permission error: $e');
       return false;
@@ -35,6 +40,11 @@ class PushNotificationService {
     try {
       final result = await _channel.invokeMethod<bool>('testNotification');
       return result ?? false;
+    } on MissingPluginException catch (e) {
+      // Android 쪽 네이티브 구현이 없을 때 등 (FCM 미구현 상태).
+      // APNs Key + SNS 연동이 끝나기 전까지는 예상된 상황이므로 silent.
+      debugPrint('Push channel not available on this platform: $e');
+      return false;
     } on PlatformException catch (e) {
       debugPrint('Test notification error: $e');
       return false;
@@ -45,6 +55,8 @@ class PushNotificationService {
   Future<void> clearBadge() async {
     try {
       await _channel.invokeMethod<void>('clearBadge');
+    } on MissingPluginException catch (e) {
+      debugPrint('Push channel not available on this platform: $e');
     } on PlatformException catch (e) {
       debugPrint('Clear badge error: $e');
     }

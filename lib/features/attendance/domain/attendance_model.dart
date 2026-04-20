@@ -16,6 +16,9 @@ class GroupMember {
     required this.memberName,
     this.note,
     this.isPresent = false,
+    this.rate,
+    this.presentWeeks,
+    this.totalWeeks,
   });
 
   final String memberId;
@@ -23,11 +26,19 @@ class GroupMember {
   final String? note;
   final bool isPresent;
 
+  /// 최근 12주 출석률 (0~100). 리더 응답에서만 채워짐.
+  final double? rate;
+  final int? presentWeeks;
+  final int? totalWeeks;
+
   factory GroupMember.fromJson(Map<String, dynamic> json) => GroupMember(
         memberId: json['member_id']?.toString() ?? '',
         memberName: json['member_name']?.toString() ?? '',
         note: json['note']?.toString(),
         isPresent: json['is_present'] == true,
+        rate: (json['rate'] as num?)?.toDouble(),
+        presentWeeks: (json['present_weeks'] as num?)?.toInt(),
+        totalWeeks: (json['total_weeks'] as num?)?.toInt(),
       );
 
   GroupMember copyWith({bool? isPresent}) => GroupMember(
@@ -35,6 +46,9 @@ class GroupMember {
         memberName: memberName,
         note: note,
         isPresent: isPresent ?? this.isPresent,
+        rate: rate,
+        presentWeeks: presentWeeks,
+        totalWeeks: totalWeeks,
       );
 }
 

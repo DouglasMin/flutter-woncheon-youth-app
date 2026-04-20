@@ -76,9 +76,9 @@ class _WCTabBar extends StatelessWidget {
                 onTap: () => onTap(1),
               ),
               _Item(
-                icon: FluentIcons.calendar_24_regular,
-                iconActive: FluentIcons.calendar_24_filled,
-                label: '출석',
+                icon: FluentIcons.people_24_regular,
+                iconActive: FluentIcons.people_24_filled,
+                label: '목장',
                 active: currentIndex == 2,
                 onTap: () => onTap(2),
               ),
