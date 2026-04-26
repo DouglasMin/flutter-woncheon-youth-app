@@ -56,5 +56,9 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
+        <!-- 알림 설정 화면 (app_settings 패키지) -->
+        <intent>
+            <action android:name="android.settings.APP_NOTIFICATION_SETTINGS"/>
+        </intent>
     </queries>
 </manifest>

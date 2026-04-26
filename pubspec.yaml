@@ -36,6 +36,7 @@ dependencies:
   shared_preferences: ^2.5.5
   flutter_native_splash: ^2.4.7
   url_launcher: ^6.3.2
+  app_settings: ^7.0.0
 
 dev_dependencies:
   flutter_test:
