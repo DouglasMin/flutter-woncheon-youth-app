@@ -206,27 +206,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
               ),
             ),
-            const SectionLabel('지원'),
-            _Group(items: [
-              _Row(
-                icon: FluentIcons.mail_24_regular,
-                label: '문의 이메일',
-                trailing: Text(
-                  'dongik.dev73@gmail.com',
-                  style: TextStyle(fontSize: 11, color: wc.textTer),
-                ),
-                onTap: _openSupportEmail,
-              ),
-              _Row(
-                icon: FluentIcons.call_24_regular,
-                label: '문의 전화',
-                trailing: Text(
-                  '010-4414-0703',
-                  style: TextStyle(fontSize: 11, color: wc.textTer),
-                ),
-                onTap: _openSupportPhone,
-              ),
-            ]),
             const SectionLabel('알림'),
             _Group(items: [
               _Row(
@@ -259,6 +238,27 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 icon: FluentIcons.sign_out_24_regular,
                 label: '로그아웃',
                 onTap: _handleLogout,
+              ),
+            ]),
+            const SectionLabel('지원'),
+            _Group(items: [
+              _Row(
+                icon: FluentIcons.mail_24_regular,
+                label: '문의 이메일',
+                trailing: Text(
+                  'dongik.dev73@gmail.com',
+                  style: TextStyle(fontSize: 11, color: wc.textTer),
+                ),
+                onTap: _openSupportEmail,
+              ),
+              _Row(
+                icon: FluentIcons.call_24_regular,
+                label: '문의 전화',
+                trailing: Text(
+                  '010-4414-0703',
+                  style: TextStyle(fontSize: 11, color: wc.textTer),
+                ),
+                onTap: _openSupportPhone,
               ),
             ]),
             const SectionLabel('위험 영역', danger: true),
