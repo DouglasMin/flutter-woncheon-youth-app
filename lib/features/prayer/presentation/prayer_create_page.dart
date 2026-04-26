@@ -81,7 +81,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
     final hasText = _contentController.text.trim().isNotEmpty;
 
     return Scaffold(
-      backgroundColor: wc.bg,
+      backgroundColor: _isAnonymous ? wc.anon : wc.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -143,140 +143,110 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
                 ],
               ),
             ),
-            // Body
+            // Body — 카드 없이 풀블리드 입력 영역
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: _isAnonymous ? wc.anon : wc.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: _isAnonymous ? wc.anonBorder : wc.border,
-                          ),
-                        ),
-                        padding: const EdgeInsets.all(18),
-                        child: TextField(
-                          controller: _contentController,
-                          maxLength: maxLen,
-                          maxLines: null,
-                          expands: true,
-                          textAlignVertical: TextAlignVertical.top,
-                          style: TextStyle(
-                            fontSize: 16,
-                            height: 1.7,
-                            color: wc.text,
-                            letterSpacing: -0.2,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: '어떤 기도 제목이 있으신가요?\n편하게 나눠주세요.',
-                            hintStyle: TextStyle(
-                              color: wc.textTer,
-                              fontSize: 16,
-                              height: 1.7,
-                            ),
-                            border: InputBorder.none,
-                            counterText: '',
-                            isDense: true,
-                            contentPadding: EdgeInsets.zero,
-                          ),
-                        ),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                child: TextField(
+                  controller: _contentController,
+                  maxLength: maxLen,
+                  maxLines: null,
+                  expands: true,
+                  textAlignVertical: TextAlignVertical.top,
+                  cursorColor: wc.accent,
+                  style: TextStyle(
+                    fontSize: 17,
+                    height: 1.6,
+                    color: wc.text,
+                    letterSpacing: -0.2,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: '어떤 기도 제목이 있으신가요?\n편하게 나눠주세요.',
+                    hintStyle: TextStyle(
+                      color: wc.textTer,
+                      fontSize: 17,
+                      height: 1.6,
+                    ),
+                    border: InputBorder.none,
+                    counterText: '',
+                    isCollapsed: true,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                  ),
+                ),
+              ),
+            ),
+            // Footer — 토글 + 카운터
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        _errorMessage!,
+                        style: TextStyle(color: wc.danger, fontSize: 13),
                       ),
                     ),
-                    if (_errorMessage != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: wc.danger, fontSize: 13),
-                        ),
-                      ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Haptic.selection();
-                            setState(() => _isAnonymous = !_isAnonymous);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
-                            decoration: BoxDecoration(
-                              color: _isAnonymous
-                                  ? wc.anonBorder
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: _isAnonymous ? wc.anonBorder : wc.border,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  FluentIcons.eye_off_16_regular,
-                                  size: 16,
-                                  color: _isAnonymous
-                                      ? wc.anonText
-                                      : wc.textTer,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '익명으로 작성',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: _isAnonymous
-                                        ? wc.anonText
-                                        : wc.textSec,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                _AnonSwitch(on: _isAnonymous),
-                              ],
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          Haptic.selection();
+                          setState(() => _isAnonymous = !_isAnonymous);
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.fromLTRB(14, 9, 10, 9),
+                          decoration: BoxDecoration(
+                            color: _isAnonymous
+                                ? wc.anonBorder
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: _isAnonymous ? wc.anonBorder : wc.border,
                             ),
                           ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          '$charCount/$maxLen',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: overLimit ? wc.danger : wc.textTer,
-                            fontFeatures: const [
-                              FontFeature.tabularFigures(),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                FluentIcons.eye_off_16_regular,
+                                size: 16,
+                                color: _isAnonymous ? wc.anonText : wc.textTer,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '익명으로 작성',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _isAnonymous
+                                      ? wc.anonText
+                                      : wc.textSec,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              _AnonSwitch(on: _isAnonymous),
                             ],
                           ),
                         ),
-                      ],
-                    ),
-                    if (_isAnonymous)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                          decoration: BoxDecoration(
-                            color: wc.anon,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '익명으로 올리면 이름이 표시되지 않고, 게시물에 익명 배경이 적용돼요.',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: wc.anonText,
-                              height: 1.5,
-                            ),
-                          ),
+                      ),
+                      const Spacer(),
+                      Text(
+                        '$charCount/$maxLen',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: overLimit ? wc.danger : wc.textTer,
+                          fontFeatures: const [
+                            FontFeature.tabularFigures(),
+                          ],
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
