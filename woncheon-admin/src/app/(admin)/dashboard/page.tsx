@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Heart, CalendarCheck, FolderKanban } from "lucide-react";
+import { Users, Heart, CalendarCheck, FolderKanban, Flag } from "lucide-react";
 
 interface DashboardStats {
   memberCount: number;
@@ -13,21 +14,28 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [pendingReports, setPendingReports] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/stats", { credentials: "include" })
-      .then((res) => {
+    Promise.all([
+      fetch("/api/admin/stats", { credentials: "include" }).then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        setStats(data);
+        return res.json() as Promise<DashboardStats>;
+      }),
+      fetch("/api/admin/reports?status=pending", { credentials: "include" })
+        .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+        .then((data: { reports?: unknown[] }) => data.reports?.length ?? 0)
+        .catch(() => null),
+    ])
+      .then(([statsData, pendingCount]) => {
+        setStats(statsData);
+        setPendingReports(pendingCount);
         setError(false);
       })
       .catch((err) => {
-        console.error("[Dashboard] Stats fetch error:", err);
+        console.error("[Dashboard] Fetch error:", err);
         setError(true);
       })
       .finally(() => setLoading(false));
@@ -68,6 +76,8 @@ export default function DashboardPage() {
     },
   ];
 
+  const hasPendingReports = (pendingReports ?? 0) > 0;
+
   return (
     <div className="space-y-6">
       <div>
@@ -76,6 +86,28 @@ export default function DashboardPage() {
           원천청년부 현황을 한눈에 확인하세요
         </p>
       </div>
+
+      {hasPendingReports && (
+        <Link
+          href="/reports"
+          className="block rounded-xl border border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30 px-5 py-4 hover:bg-rose-100 dark:hover:bg-rose-950/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <Flag className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-rose-900 dark:text-rose-200">
+                미처리 신고 {pendingReports}건
+              </p>
+              <p className="text-xs text-rose-700/80 dark:text-rose-300/80">
+                개인정보처리방침 약속에 따라 24시간 이내 검토가 필요합니다.
+              </p>
+            </div>
+            <span className="text-xs font-medium text-rose-700 dark:text-rose-300">
+              검토하러 가기 →
+            </span>
+          </div>
+        </Link>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((card) => (
