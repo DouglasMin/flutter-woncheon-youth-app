@@ -67,12 +67,41 @@
       text-align: center;
     }
     hr { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
+    .support-box {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 24px 0 8px;
+    }
+    .support-box h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 16px;
+    }
+    .support-box p {
+      margin-bottom: 6px;
+      font-size: 14px;
+    }
+    .support-box a {
+      color: #2b6cb0;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .support-box a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>원천청년부 앱 개인정보처리방침</h1>
-    <p class="date">최종 수정일: 2026년 4월 19일</p>
+    <p class="date">최종 수정일: 2026년 4월 27일</p>
+
+    <div class="support-box">
+      <h2>📮 앱 지원 / 문의하기</h2>
+      <p>앱 사용 중 문제가 있거나 문의 사항이 있으시면 아래로 연락해 주세요.</p>
+      <p>이메일: <a href="mailto:dongik.dev73@gmail.com?subject=%5B%EC%9B%90%EC%B2%9C%EC%B2%AD%EB%85%84%EB%B6%80%5D%20%EB%AC%B8%EC%9D%98">dongik.dev73@gmail.com</a></p>
+      <p>전화: <a href="tel:+821044140703">+82-10-4414-0703</a></p>
+    </div>
 
     <p>원천교회 청년부(이하 "운영자")는 「개인정보 보호법」에 따라 이용자의 개인정보를 보호하고 이와 관련한 고충을 신속하게 처리할 수 있도록 다음과 같이 개인정보처리방침을 수립·공개합니다.</p>
 
@@ -145,10 +174,10 @@
     <h2>7. 개인정보의 안전성 확보 조치</h2>
     <ul>
       <li>비밀번호 bcrypt 단방향 암호화</li>
-      <li>JWT 기반 인증 토큰 (Access / Refresh)</li>
+      <li>JWT 기반 인증 토큰 자동 만료 (Access Token 1시간 / Refresh Token 30일)</li>
       <li>모든 통신 HTTPS/TLS (AWS API Gateway)</li>
       <li>데이터베이스 접근 제어 (AWS IAM 역할 기반)</li>
-      <li>5분 무활동 자동 로그아웃</li>
+      <li>이용자 단말의 보안 저장소(iOS Keychain / Android Keystore)에 토큰 보관</li>
     </ul>
 
     <h2>8. 이용자의 권리</h2>
@@ -175,7 +204,7 @@
     <p>이 개인정보처리방침은 시행일로부터 적용되며, 변경사항이 있을 경우 앱 공지를 통해 고지합니다.</p>
 
     <div class="footer">
-      본 방침은 2026년 4월 19일부터 시행됩니다.
+      본 방침은 2026년 4월 27일부터 시행됩니다.
     </div>
   </div>
 </body>
