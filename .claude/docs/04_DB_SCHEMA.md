@@ -278,7 +278,7 @@ deleteItemsByPK("PRAYER#{prayerId}")
 
 ## 8. PostgreSQL 스키마 (출결 관리)
 
-별도 RDS PostgreSQL (db.t4g.micro) 사용. DynamoDB와 `memberId`로 연결.
+별도 **Supabase 관리형 PostgreSQL** 사용 (pooler endpoint: `aws-1-ap-northeast-2.pooler.supabase.com`). DynamoDB와 `memberId`로 연결.
 
 ```sql
 groups (id, name, leader_member_id)

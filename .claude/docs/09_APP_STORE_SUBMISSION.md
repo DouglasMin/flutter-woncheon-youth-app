@@ -71,8 +71,12 @@ Center and we can trigger one manually.
 ## Data & privacy
 
 - No third-party analytics or advertising SDKs
-- All data stored in AWS (DynamoDB for members/prayers/comments,
-  RDS PostgreSQL for attendance). Region: ap-northeast-2 (Seoul).
+- Data is stored across two managed cloud providers, all in
+  ap-northeast-2 (Seoul):
+    • Amazon Web Services (DynamoDB) — members, prayers, comments,
+      reactions, reports, blocks, device tokens
+    • Supabase (managed PostgreSQL) — groups and Sunday attendance
+      records
 - Privacy policy: https://douglasmin.github.io/flutter-woncheon-youth-app/
 
 ## Language

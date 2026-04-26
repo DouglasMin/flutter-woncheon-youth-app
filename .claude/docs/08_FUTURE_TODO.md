@@ -18,7 +18,7 @@
 - [x] 백엔드 배포 (20 Lambda, DynamoDB, API Gateway)
 
 ### Phase 2 (출결 관리)
-- [x] RDS PostgreSQL (db.t4g.micro Free Tier)
+- [x] Supabase PostgreSQL (관리형, Free Plan)
 - [x] 출결 DB 스키마 (groups, group_members, attendance)
 - [x] 출결 Lambda 4개 (myGroup, check, weekly, stats)
 - [x] 목장 데이터 마이그레이션 (13목장, 134명, 557출석)
@@ -39,7 +39,7 @@
 | 2 | 관리자 웹 대시보드 (Next.js) | 중간 | 회원 관리, 출결 현황, 기도 관리 |
 | 3 | 관리자 인증 (JWT role 추가) | 쉬움 | DynamoDB Member에 role 필드 추가 |
 | 4 | 신규 회원 등록 API | 쉬움 | 관리자용 CRUD |
-| 5 | 송리스트 기능 (DB + Lambda + Flutter UI) | 중간 | DynamoDB or RDS |
+| 5 | 송리스트 기능 (DB + Lambda + Flutter UI) | 중간 | DynamoDB or Supabase PG |
 | 6 | 카카오채널 연동 (알림톡 API) | 중간 | 카카오 비즈니스 계정 필요 |
 | 7 | 소셜 로그인 (Apple/Google) | 중간 | Apple은 $99 이후 |
 | 8 | 오프라인 모드 (기도문 로컬 캐싱) | 중간 | Drift 패키지 재추가 |
@@ -86,14 +86,16 @@
 
 ## 참고: 현재 인프라 현황
 
-| 서비스 | 리소스 | 비용 |
-|---|---|---|
-| DynamoDB | woncheon-dev (PAY_PER_REQUEST) | 무료 (200명 규모) |
-| RDS PostgreSQL | db.t4g.micro, 20GB gp2 | Free Tier (12개월) |
-| Lambda | 20개 함수 | Free Tier 범위 |
-| API Gateway | REST API | Free Tier 범위 |
-| SSM Parameter Store | 7개 파라미터 | 무료 |
-| S3 | Serverless 배포 아티팩트 | 거의 무료 |
+| 서비스 | 사업자 | 리소스 | 비용 |
+|---|---|---|---|
+| DynamoDB | AWS | woncheon-dev (PAY_PER_REQUEST), 리전 ap-northeast-2 | 무료 (200명 규모) |
+| PostgreSQL | **Supabase** | pooler `aws-1-ap-northeast-2.pooler.supabase.com:5432`, project `hhnknrrcmonvcmqlkxii` | Supabase Free Plan |
+| Lambda | AWS | 20개 함수 | Free Tier 범위 |
+| API Gateway | AWS | REST API | Free Tier 범위 |
+| SSM Parameter Store | AWS | 7개 파라미터 (PG 자격증명, JWT secret 등) | 무료 |
+| S3 | AWS | Serverless 배포 아티팩트 | 거의 무료 |
+
+> **주의**: PostgreSQL은 AWS RDS가 아니라 **Supabase** 관리형 호스팅. 호스트는 ap-northeast-2 리전이지만 사업자는 Supabase, Inc. (미국). 개인정보처리방침 Section 6에 명시됨.
 
 ## 참고: 테스트 계정
 

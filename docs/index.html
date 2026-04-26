@@ -159,16 +159,21 @@
 
     <h2>6. 개인정보의 저장 및 처리 위치</h2>
     <ul>
-      <li><strong>저장 인프라:</strong> Amazon Web Services (AWS)</li>
-      <li><strong>서버 리전:</strong> 서울 (ap-northeast-2)</li>
+      <li><strong>저장 인프라:</strong>
+        <ul>
+          <li>Amazon Web Services, Inc. (미국) — DynamoDB, API Gateway, Lambda, Systems Manager Parameter Store</li>
+          <li>Supabase, Inc. (미국) — PostgreSQL 관리형 호스팅 서비스</li>
+        </ul>
+      </li>
+      <li><strong>서버 리전:</strong> 모든 데이터는 서울 리전(ap-northeast-2)에 저장됩니다.</li>
       <li><strong>저장소 구성:</strong>
         <ul>
           <li>Amazon DynamoDB — 회원 정보, 중보기도, 댓글, 반응, 신고 내역, 차단 목록, 디바이스 토큰</li>
-          <li>Amazon RDS (PostgreSQL) — 목장 및 출석 기록</li>
-          <li>AWS Systems Manager Parameter Store — 비밀 설정값 (JWT secret 등)</li>
+          <li>Supabase PostgreSQL — 목장 및 주일 출석 기록</li>
+          <li>AWS Systems Manager Parameter Store — 비밀 설정값 (JWT secret, DB 자격증명 등)</li>
         </ul>
       </li>
-      <li><strong>제3자 서비스 공유:</strong> 없음 (광고/분석 SDK를 사용하지 않음)</li>
+      <li><strong>처리 위탁:</strong> 위 두 클라우드 인프라 사업자 외 제3자에게 개인정보 처리를 위탁하지 않으며, 광고·분석·트래킹 SDK를 사용하지 않습니다.</li>
     </ul>
 
     <h2>7. 개인정보의 안전성 확보 조치</h2>
