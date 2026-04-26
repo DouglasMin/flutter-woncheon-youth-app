@@ -30,6 +30,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
   const reportId = ulid();
   const createdAt = new Date().toISOString();
+  const status = 'pending';
 
   await docClient.send(
     new PutCommand({
@@ -42,8 +43,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         targetType,
         targetId,
         reason: reason ?? '',
-        status: 'pending',
+        status,
         createdAt,
+        // GSI4: 관리자 신고 검토 화면용 (status별 정렬 조회)
+        // BeginsWith("pending#") 쿼리로 미처리 신고를 최신순으로 가져옴
+        GSI4PK: 'REPORT_LIST',
+        GSI4SK: `${status}#${createdAt}`,
       },
     }),
   );
