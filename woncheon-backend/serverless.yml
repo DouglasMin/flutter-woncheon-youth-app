@@ -354,8 +354,13 @@ functions:
   sendWeeklyNotification:
     handler: src/functions/notification/sendWeekly.handler
     events:
+      # 화 11:00 KST (= 02:00 UTC)
       - schedule:
-          rate: cron(0 11 ? * SAT *)
+          rate: cron(0 2 ? * TUE *)
+          enabled: true
+      # 금 20:00 KST (= 11:00 UTC, 금요 성령집회 직전)
+      - schedule:
+          rate: cron(0 11 ? * FRI *)
           enabled: true
 
   sendTestNotification:

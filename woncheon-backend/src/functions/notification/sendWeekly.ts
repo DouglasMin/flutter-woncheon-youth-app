@@ -3,17 +3,24 @@ import { QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../../libs/dynamo.js';
 import { publishToEndpoint } from '../../libs/sns.js';
 
-function getStartOfWeekKST(): string {
-  const now = new Date();
-  const kstOffset = 9 * 60 * 60 * 1000;
-  const kstNow = new Date(now.getTime() + kstOffset);
-  const day = kstNow.getUTCDay();
-  const diff = day === 0 ? 6 : day - 1;
-  const monday = new Date(kstNow);
-  monday.setUTCDate(kstNow.getUTCDate() - diff);
-  monday.setUTCHours(0, 0, 0, 0);
-  const utcMonday = new Date(monday.getTime() - kstOffset);
-  return utcMonday.toISOString();
+/** 직전 알림 발송 시각(ISO). 없으면 7일 전을 기본 윈도우로 사용. */
+async function getLastNotificationTime(): Promise<string> {
+  const result = await docClient.send(
+    new QueryCommand({
+      TableName: TABLE_NAME,
+      KeyConditionExpression: 'PK = :pk',
+      ExpressionAttributeValues: { ':pk': 'NOTIF_LOG' },
+      ScanIndexForward: false,
+      Limit: 1,
+    }),
+  );
+  const last = result.Items?.[0];
+  if (last && typeof last.sentAt === 'string') {
+    return last.sentAt;
+  }
+  const fallback = new Date();
+  fallback.setUTCDate(fallback.getUTCDate() - 7);
+  return fallback.toISOString();
 }
 
 async function queryAllDevices(): Promise<Array<Record<string, unknown>>> {
@@ -38,7 +45,7 @@ async function queryAllDevices(): Promise<Array<Record<string, unknown>>> {
 }
 
 export const handler: ScheduledHandler = async () => {
-  const startOfWeek = getStartOfWeekKST();
+  const since = await getLastNotificationTime();
 
   const countResult = await docClient.send(
     new QueryCommand({
@@ -47,7 +54,7 @@ export const handler: ScheduledHandler = async () => {
       KeyConditionExpression: 'GSI2PK = :pk AND GSI2SK >= :start',
       ExpressionAttributeValues: {
         ':pk': 'PRAYER_LIST',
-        ':start': `${startOfWeek}#`,
+        ':start': `${since}#`,
       },
       Select: 'COUNT',
     }),
@@ -55,7 +62,7 @@ export const handler: ScheduledHandler = async () => {
 
   const count = countResult.Count ?? 0;
   if (count === 0) {
-    console.log('이번 주 새 중보기도 없음. 알림 미발송.');
+    console.log(`직전 알림(${since}) 이후 새 중보기도 없음. 알림 미발송.`);
     return;
   }
 
@@ -66,7 +73,7 @@ export const handler: ScheduledHandler = async () => {
   }
 
   const title = '원천청년부';
-  const body = `이번 주 ${count}개의 중보기도가 올라왔어요 🙏`;
+  const body = `${count}개의 새 중보기도가 올라왔어요 🙏`;
   const data = { screen: 'prayer_list' };
 
   let successCount = 0;
@@ -89,6 +96,7 @@ export const handler: ScheduledHandler = async () => {
         PK: 'NOTIF_LOG',
         SK: new Date().toISOString(),
         sentAt: new Date().toISOString(),
+        windowSince: since,
         newPrayerCount: count,
         recipientCount: successCount,
         status: successCount === devices.length ? 'success' : 'partial_fail',
@@ -96,5 +104,7 @@ export const handler: ScheduledHandler = async () => {
     }),
   );
 
-  console.log(`알림 발송 완료: ${successCount}/${devices.length}명`);
+  console.log(
+    `알림 발송 완료: ${count}개 기도, ${successCount}/${devices.length}명 (since ${since})`,
+  );
 };
