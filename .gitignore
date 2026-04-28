@@ -82,3 +82,9 @@ pubspec.lock
 
 # Test push payloads
 test_push/
+
+# Firebase secrets (절대 커밋 금지)
+**/google-services.json
+**/firebase-adminsdk*.json
+**/*-firebase-adminsdk-*.json
+*-firebase-adminsdk-*.json
