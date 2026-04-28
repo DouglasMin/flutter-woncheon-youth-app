@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 
 import 'package:dio/dio.dart';
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
@@ -9,11 +8,10 @@ import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/mock/mock_auth_repository.dart';
 import 'package:woncheon_youth/core/mock/mock_mode.dart';
-import 'package:woncheon_youth/core/push/push_providers.dart';
+import 'package:woncheon_youth/core/push/push_token_registrar.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
-import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
@@ -28,8 +26,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   final _currentController = TextEditingController();
   final _newController = TextEditingController();
   final _confirmController = TextEditingController();
-  StreamSubscription<String>? _pushTokenSub;
-  Timer? _pushTokenCancelTimer;
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -38,8 +34,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     _currentController.dispose();
     _newController.dispose();
     _confirmController.dispose();
-    _pushTokenCancelTimer?.cancel();
-    _pushTokenSub?.cancel();
     super.dispose();
   }
 
@@ -86,8 +80,7 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
 
       if (!mounted) return;
       unawaited(Haptic.light());
-      await _requestPushPermission();
-      if (!mounted) return;
+      unawaited(registerDeviceTokenAfterAuth(ref));
       context.go(AppRoutes.home);
     } on MockApiException catch (e) {
       await Haptic.heavy();
@@ -100,30 +93,6 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
-  }
-
-  Future<void> _requestPushPermission() async {
-    final pushService = ref.read(pushNotificationServiceProvider);
-    final granted = await pushService.requestPermission();
-    if (!granted || !mounted) return;
-    _pushTokenSub?.cancel();
-    final platform = Platform.isIOS ? 'ios' : 'android';
-    _pushTokenSub = pushService.onTokenReceived.listen((token) async {
-      if (!mounted) return;
-      try {
-        await ref.read(apiClientProvider).dio.post<Map<String, dynamic>>(
-          '/auth/device-token',
-          data: {'token': token, 'platform': platform},
-        );
-      } on DioException catch (e) {
-        debugPrint('Failed to register device token: $e');
-      }
-    });
-    _pushTokenCancelTimer?.cancel();
-    _pushTokenCancelTimer = Timer(const Duration(seconds: 10), () {
-      _pushTokenSub?.cancel();
-      _pushTokenSub = null;
-    });
   }
 
   @override
