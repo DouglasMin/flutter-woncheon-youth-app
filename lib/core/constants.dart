@@ -1,16 +1,10 @@
 abstract final class AppConstants {
   static const String appName = '원천청년부';
 
-  // API
-  static const String apiBaseUrlDev =
+  // API — 단일 백엔드 운영 (Lambda stage = dev, dev/prod 인프라 분리 안 함).
+  // 환경 분리는 git 브랜치(main=prod 빌드, dev=작업)로 처리.
+  static const String apiBaseUrl =
       'https://ul7b1ft3di.execute-api.ap-northeast-2.amazonaws.com/dev';
-  static const String apiBaseUrlProd =
-      'https://PLACEHOLDER.execute-api.ap-northeast-2.amazonaws.com/prod';
-
-  static String get apiBaseUrl {
-    const env = String.fromEnvironment('ENV', defaultValue: 'dev');
-    return env == 'prod' ? apiBaseUrlProd : apiBaseUrlDev;
-  }
 
   // Storage keys
   static const String accessTokenKey = 'access_token';
