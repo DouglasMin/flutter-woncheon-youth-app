@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
+import 'package:woncheon_youth/core/update/app_update_service.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
@@ -37,6 +38,12 @@ class _SplashPageState extends ConsumerState<SplashPage>
     await _ctrl.forward();
     await Future<void>.delayed(const Duration(milliseconds: 900));
     if (!mounted) return;
+
+    // 강제 업데이트 체크 — 업데이트 필요 시 다이얼로그/IMMEDIATE flow가 진입을 막는다.
+    // 네트워크 실패 등은 silent fail이라 정상 흐름 계속 진행.
+    await AppUpdateService.ensureUpToDate(context);
+    if (!mounted) return;
+
     final token = await ref.read(secureStorageServiceProvider).getAccessToken();
     if (!mounted) return;
     if (token != null) {
