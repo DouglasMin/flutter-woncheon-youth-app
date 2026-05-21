@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/constants.dart';
-import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
@@ -52,17 +51,10 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
     });
     await Haptic.medium();
     try {
-      if (kMockMode) {
-        await ref.read(mockPrayerRepositoryProvider).createPrayer(
-              content: content,
-              isAnonymous: _isAnonymous,
-            );
-      } else {
-        await ref.read(prayerRepositoryProvider).createPrayer(
-              content: content,
-              isAnonymous: _isAnonymous,
-            );
-      }
+      await ref.read(prayerRepositoryProvider).createPrayer(
+            content: content,
+            isAnonymous: _isAnonymous,
+          );
       if (!mounted) return;
       unawaited(Haptic.light());
       context.pop(true);
