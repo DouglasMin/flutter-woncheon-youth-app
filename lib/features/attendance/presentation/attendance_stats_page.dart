@@ -374,7 +374,7 @@ class _GroupAverageCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     hasData
-                        ? '${s.presentCount}/${s.totalCount}명 출석 (이번 분기)'
+                        ? '최근 분기 평균 출석률'
                         : _loading
                             ? '불러오는 중...'
                             : '데이터 없음',
