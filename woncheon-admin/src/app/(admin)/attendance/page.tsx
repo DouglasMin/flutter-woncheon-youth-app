@@ -64,6 +64,27 @@ export default function AttendancePage() {
   const pastDates = data.dates.filter((d) => d <= today);
   const recentDates = pastDates.slice(-8);
 
+  // 목장별 랭킹: 최근 N주(recentDates) 기준 평균 출석률 계산 후 정렬
+  const ranking = [...data.groups]
+    .map((g) => {
+      let presentCells = 0;
+      let totalCells = 0;
+      for (const m of g.members) {
+        for (const d of recentDates) {
+          totalCells += 1;
+          if (m.dates[d] === true) presentCells += 1;
+        }
+      }
+      const rate = totalCells > 0 ? (presentCells / totalCells) * 100 : 0;
+      return {
+        id: g.id,
+        name: g.name,
+        memberCount: g.members.length,
+        rate,
+      };
+    })
+    .sort((a, b) => b.rate - a.rate);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -84,6 +105,62 @@ export default function AttendancePage() {
           </Button>
         </div>
       </div>
+
+      {/* 목장별 출석률 랭킹 — 운영진 전용 (앱 사용자에게는 비공개) */}
+      <Card className="border-0 shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            목장별 출석률
+            <span className="ml-2 text-xs font-normal text-slate-500">
+              최근 {recentDates.length}주차 평균
+            </span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          {ranking.map((g, i) => {
+            const rateText = `${g.rate.toFixed(0)}%`;
+            const barColor =
+              g.rate >= 80
+                ? "bg-emerald-500"
+                : g.rate >= 50
+                  ? "bg-amber-500"
+                  : "bg-red-500";
+            const isTop = i < 3;
+            return (
+              <div
+                key={g.id}
+                className="flex items-center gap-3 py-1.5"
+              >
+                <div
+                  className={
+                    "w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold " +
+                    (isTop
+                      ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
+                      : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400")
+                  }
+                >
+                  {i + 1}
+                </div>
+                <div className="w-24 text-sm font-medium truncate">
+                  {g.name}
+                </div>
+                <div className="text-xs text-slate-400 w-12">
+                  {g.memberCount}명
+                </div>
+                <div className="flex-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div
+                    className={barColor + " h-full rounded-full transition-all"}
+                    style={{ width: `${Math.max(2, g.rate)}%` }}
+                  />
+                </div>
+                <div className="w-12 text-right text-sm font-semibold tabular-nums">
+                  {rateText}
+                </div>
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue={data.groups[0]?.name ?? "all"}>
         <TabsList className="flex-wrap h-auto gap-1 bg-transparent p-0">

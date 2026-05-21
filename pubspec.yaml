@@ -44,6 +44,9 @@ dependencies:
   in_app_update: ^4.2.5
   package_info_plus: ^9.0.1
 
+  # Charts
+  fl_chart: ^0.69.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
