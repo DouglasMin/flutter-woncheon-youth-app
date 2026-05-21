@@ -30,8 +30,17 @@ export async function publishToEndpoint(
 ): Promise<void> {
   const message = {
     default: body,
+    // FCM (Android): priority=high + android_channel_id로 popup(heads-up) 트리거.
+    // SNS legacy GCM 페이로드는 자동으로 FCM v1의 `android.priority` /
+    // `android.notification.channel_id`로 매핑됨.
+    // (AWS docs: https://docs.aws.amazon.com/sns/latest/dg/sns-fcm-v1-payloads.html)
     GCM: JSON.stringify({
-      notification: { title, body },
+      priority: 'high',
+      notification: {
+        title,
+        body,
+        android_channel_id: 'prayer_high',
+      },
       data: data ?? {},
     }),
     APNS: JSON.stringify({

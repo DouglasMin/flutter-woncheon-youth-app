@@ -47,7 +47,8 @@ class WoncheonMessagingService : FirebaseMessagingService() {
             .setContentTitle(title)
             .setContentText(body)
             .setAutoCancel(true)
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            // <Android 8 (API 26) 레거시 폰에서만 적용. API 26+에선 채널 importance가 우선.
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pending)
 
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -57,18 +58,28 @@ class WoncheonMessagingService : FirebaseMessagingService() {
     private fun ensureNotificationChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // 옛 채널(IMPORTANCE_DEFAULT) 정리 — heads-up이 안 떠서 deprecated.
+        // Android 공식 가이드: "Once you submit the channel ... you can't change
+        // the importance level." → 새 ID로 새 채널 만들고 옛 채널은 삭제.
+        if (nm.getNotificationChannel(LEGACY_CHANNEL_ID) != null) {
+            nm.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+        }
+
         if (nm.getNotificationChannel(CHANNEL_ID) != null) return
         val channel = NotificationChannel(
             CHANNEL_ID,
             "기도 알림",
-            NotificationManager.IMPORTANCE_DEFAULT,
+            NotificationManager.IMPORTANCE_HIGH,
         ).apply {
-            description = "새 중보기도 알림"
+            description = "새 중보기도 알림 (popup 표시)"
         }
         nm.createNotificationChannel(channel)
     }
 
     companion object {
-        const val CHANNEL_ID = "prayer_default"
+        // v1.0.4: heads-up popup 동작을 위해 IMPORTANCE_HIGH 채널로 전환.
+        const val CHANNEL_ID = "prayer_high"
+        private const val LEGACY_CHANNEL_ID = "prayer_default"
     }
 }

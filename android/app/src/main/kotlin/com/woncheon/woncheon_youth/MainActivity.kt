@@ -4,6 +4,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.messaging.FirebaseMessaging
 import io.flutter.embedding.android.FlutterActivity
@@ -31,7 +33,7 @@ class MainActivity : FlutterActivity() {
                         // Android 시스템에 표준 badge API 없음 — no-op.
                         result.success(null)
                     }
-                    "getDeviceToken" -> result.success(null)
+                    "getDeviceToken" -> handleGetDeviceToken(result)
                     else -> result.notImplemented()
                 }
             }
@@ -99,10 +101,46 @@ class MainActivity : FlutterActivity() {
     private fun fetchAndPushToken() {
         FirebaseMessaging.getInstance().token.addOnCompleteListener(
             OnCompleteListener { task ->
-                if (!task.isSuccessful) return@OnCompleteListener
+                if (!task.isSuccessful) {
+                    android.util.Log.e(
+                        "WoncheonPush",
+                        "FCM getToken 실패",
+                        task.exception,
+                    )
+                    return@OnCompleteListener
+                }
                 val token = task.result ?: return@OnCompleteListener
                 cachedToken = token
                 flushTokenToChannel()
+            },
+        )
+    }
+
+    /// Dart에서 직접 호출. 캐시된 토큰이 있으면 즉시 반환, 없으면
+    /// Firebase에서 비동기로 가져와서 반환. listener race를 우회.
+    /// addOnCompleteListener 콜백은 워커 스레드에서 실행되므로 result 응답은
+    /// 반드시 메인 스레드로 dispatch 해야 한다.
+    private fun handleGetDeviceToken(result: MethodChannel.Result) {
+        val cached = cachedToken
+        if (cached != null) {
+            result.success(cached)
+            return
+        }
+        val mainHandler = Handler(Looper.getMainLooper())
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(
+            OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    android.util.Log.e(
+                        "WoncheonPush",
+                        "getDeviceToken FCM 실패",
+                        task.exception,
+                    )
+                    mainHandler.post { result.success(null) }
+                    return@OnCompleteListener
+                }
+                val token = task.result
+                cachedToken = token
+                mainHandler.post { result.success(token) }
             },
         )
     }
@@ -120,9 +158,13 @@ class MainActivity : FlutterActivity() {
         @Volatile
         var cachedToken: String? = null
 
+        /// FirebaseMessagingService.onNewToken() 은 백그라운드 스레드에서 호출되므로
+        /// MethodChannel 호출은 반드시 메인 스레드로 dispatch 해야 한다.
         fun flushTokenToChannel() {
             val token = cachedToken ?: return
-            instance?.channel?.invokeMethod("onTokenReceived", token)
+            Handler(Looper.getMainLooper()).post {
+                instance?.channel?.invokeMethod("onTokenReceived", token)
+            }
         }
     }
 }

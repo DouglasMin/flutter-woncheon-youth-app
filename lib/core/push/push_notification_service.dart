@@ -13,8 +13,19 @@ class PushNotificationService {
   final _tokenController = StreamController<String>.broadcast();
   final _notificationTapController = StreamController<String>.broadcast();
 
-  /// Stream of device tokens when registered
-  Stream<String> get onTokenReceived => _tokenController.stream;
+  /// Latest received token. Cached so late subscribers can read it.
+  /// Android FCM은 앱 시작 시 토큰을 자동 발급해서 listener가 붙기 전에
+  /// onTokenReceived 이벤트가 dropped 될 수 있음. 캐시로 보완.
+  String? _cachedToken;
+  String? get cachedToken => _cachedToken;
+
+  /// Stream of device tokens. Late subscribers automatically receive the
+  /// last cached token (if any) on subscribe.
+  Stream<String> get onTokenReceived async* {
+    final cached = _cachedToken;
+    if (cached != null) yield cached;
+    yield* _tokenController.stream;
+  }
 
   /// Stream of screen names when notification is tapped
   Stream<String> get onNotificationTapped => _notificationTapController.stream;
@@ -67,6 +78,7 @@ class PushNotificationService {
       case 'onTokenReceived':
         final token = call.arguments as String?;
         if (token != null && token.isNotEmpty) {
+          _cachedToken = token;
           _tokenController.add(token);
         }
       case 'onNotificationTapped':

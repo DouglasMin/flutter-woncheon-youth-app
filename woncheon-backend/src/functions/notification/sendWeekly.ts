@@ -76,18 +76,19 @@ export const handler: ScheduledHandler = async () => {
   const body = `${count}개의 새 중보기도가 올라왔어요 🙏`;
   const data = { screen: 'prayer_list' };
 
-  let successCount = 0;
-  for (const device of devices) {
-    const endpoint = device.snsEndpoint as string | undefined;
-    if (!endpoint) continue;
+  const endpoints = devices
+    .map((d) => d.snsEndpoint)
+    .filter((e): e is string => typeof e === 'string' && e.length > 0);
 
-    try {
-      await publishToEndpoint(endpoint, title, body, data);
-      successCount++;
-    } catch (err) {
-      console.error(`Failed to send to ${endpoint}:`, err);
+  const results = await Promise.allSettled(
+    endpoints.map((ep) => publishToEndpoint(ep, title, body, data)),
+  );
+  results.forEach((r, i) => {
+    if (r.status === 'rejected') {
+      console.error(`Failed to send to ${endpoints[i]}:`, r.reason);
     }
-  }
+  });
+  const successCount = results.filter((r) => r.status === 'fulfilled').length;
 
   await docClient.send(
     new PutCommand({
