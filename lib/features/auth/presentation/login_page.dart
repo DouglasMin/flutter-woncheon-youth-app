@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
-import 'package:woncheon_youth/core/mock/mock_auth_repository.dart';
-import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/push/push_token_registrar.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
@@ -56,16 +54,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await Haptic.medium();
 
     try {
-      late final Map<String, dynamic> data;
-      if (kMockMode) {
-        data = await ref
-            .read(mockAuthRepositoryProvider)
-            .login(name: name, password: password);
-      } else {
-        data = await ref
-            .read(authRepositoryProvider)
-            .login(name: name, password: password);
-      }
+      final data = await ref
+          .read(authRepositoryProvider)
+          .login(name: name, password: password);
       final isFirstLogin = data['isFirstLogin'] as bool? ?? false;
 
       if (!mounted) return;
@@ -81,9 +72,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         unawaited(registerDeviceTokenAfterAuth(ref));
         context.go(AppRoutes.home);
       }
-    } on MockApiException catch (e) {
-      await Haptic.heavy();
-      setState(() => _errorMessage = e.message);
     } on DioException catch (e) {
       await Haptic.heavy();
       setState(() {

@@ -324,13 +324,15 @@ Lambda 함수 내에서 `event.requestContext.authorizer.memberId`로 현재 사
 
 ## 4. EventBridge 스케줄 (주간 알림)
 
-**스케줄**: `cron(0 11 ? * SAT *)` (UTC 기준 토요일 11:00 = KST 20:00)
+**스케줄**: 주 2회
+- `cron(0 2 ? * TUE *)` — UTC 화요일 02:00 = **KST 화 11:00**
+- `cron(0 11 ? * FRI *)` — UTC 금요일 11:00 = **KST 금 20:00**
 
 **트리거**: `notification/sendWeekly` Lambda
 
 **로직**
-1. 이번 주 월요일 00:00 KST 이후 생성된 PrayerRequest 수 집계
-2. count == 0이면 종료
+1. 직전 알림 발송 시각(`NOTIF_LOG`) 이후 생성된 PrayerRequest 수 집계
+2. count == 0이면 종료 (알림 미발송)
 3. GSI3에서 전체 DeviceToken 조회
 4. SNS `publish`로 각 endpoint에 푸시 발송
 5. NotificationLog 저장

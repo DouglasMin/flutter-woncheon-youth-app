@@ -1,20 +1,14 @@
 import 'package:flutter/foundation.dart' show immutable, listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:woncheon_youth/core/mock/mock_mode.dart';
-import 'package:woncheon_youth/core/mock/mock_prayer_repository.dart';
 import 'package:woncheon_youth/core/storage/read_prayers_storage.dart';
 import 'package:woncheon_youth/features/prayer/data/prayer_repository.dart';
-import 'package:woncheon_youth/features/prayer/domain/prayer_filter.dart';
 import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
+import 'package:woncheon_youth/features/prayer/domain/prayer_filter.dart';
 import 'package:woncheon_youth/features/prayer/domain/prayer_model.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 
 final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
   return PrayerRepository(ref.watch(apiClientProvider));
-});
-
-final mockPrayerRepositoryProvider = Provider<MockPrayerRepository>((ref) {
-  return MockPrayerRepository();
 });
 
 final prayerFilterProvider =
@@ -38,7 +32,6 @@ final readPrayerIdsProvider = FutureProvider<Set<String>>((ref) async {
 // Comments
 final commentsProvider =
     FutureProvider.autoDispose.family<List<CommentItem>, String>((ref, prayerId) async {
-  if (kMockMode) return [];
   final repo = ref.watch(prayerRepositoryProvider);
   return repo.getComments(prayerId);
 });
@@ -52,22 +45,12 @@ final reactionProvider =
 class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
   @override
   Future<ReactionState> build(String prayerId) async {
-    if (kMockMode) return const ReactionState(reacted: false, count: 0);
     final repo = ref.read(prayerRepositoryProvider);
     return repo.getReaction(prayerId);
   }
 
   Future<void> toggle() async {
     final prayerId = arg;
-    if (kMockMode) {
-      final current = state.valueOrNull ??
-          const ReactionState(reacted: false, count: 0);
-      state = AsyncData(ReactionState(
-        reacted: !current.reacted,
-        count: current.reacted ? current.count - 1 : current.count + 1,
-      ));
-      return;
-    }
     final repo = ref.read(prayerRepositoryProvider);
     final result = await repo.toggleReaction(prayerId);
     state = AsyncData(result);
@@ -76,10 +59,6 @@ class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
 
 final prayerDetailProvider =
     FutureProvider.autoDispose.family<PrayerDetail, String>((ref, prayerId) async {
-  if (kMockMode) {
-    final mockRepo = ref.watch(mockPrayerRepositoryProvider);
-    return mockRepo.getPrayer(prayerId);
-  }
   final repo = ref.watch(prayerRepositoryProvider);
   return repo.getPrayer(prayerId);
 });
@@ -143,20 +122,11 @@ class PrayerListNotifier extends AsyncNotifier<PrayerListState> {
     final startDate = filter.startDate;
     final endDate = filter.endDate;
 
-    late final PrayerListResponse response;
-    if (kMockMode) {
-      final mockRepo = ref.watch(mockPrayerRepositoryProvider);
-      response = await mockRepo.listPrayers(
-        startDate: startDate,
-        endDate: endDate,
-      );
-    } else {
-      final repo = ref.watch(prayerRepositoryProvider);
-      response = await repo.listPrayers(
-        startDate: startDate?.toUtc().toIso8601String(),
-        endDate: endDate?.toUtc().toIso8601String(),
-      );
-    }
+    final repo = ref.watch(prayerRepositoryProvider);
+    final response = await repo.listPrayers(
+      startDate: startDate?.toUtc().toIso8601String(),
+      endDate: endDate?.toUtc().toIso8601String(),
+    );
     return PrayerListState(
       items: response.items,
       nextCursor: response.nextCursor,
@@ -174,22 +144,12 @@ class PrayerListNotifier extends AsyncNotifier<PrayerListState> {
     final startDate = filter.startDate;
     final endDate = filter.endDate;
 
-    late final PrayerListResponse response;
-    if (kMockMode) {
-      final mockRepo = ref.read(mockPrayerRepositoryProvider);
-      response = await mockRepo.listPrayers(
-        cursor: current.nextCursor,
-        startDate: startDate,
-        endDate: endDate,
-      );
-    } else {
-      final repo = ref.read(prayerRepositoryProvider);
-      response = await repo.listPrayers(
-        cursor: current.nextCursor,
-        startDate: startDate?.toUtc().toIso8601String(),
-        endDate: endDate?.toUtc().toIso8601String(),
-      );
-    }
+    final repo = ref.read(prayerRepositoryProvider);
+    final response = await repo.listPrayers(
+      cursor: current.nextCursor,
+      startDate: startDate?.toUtc().toIso8601String(),
+      endDate: endDate?.toUtc().toIso8601String(),
+    );
 
     state = AsyncData(
       current.copyWith(

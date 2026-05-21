@@ -158,7 +158,10 @@ functions:
     handler: src/functions/notification/sendWeekly.handler
     events:
       - schedule:
-          rate: cron(0 11 ? * SAT *)   # 매주 토요일 KST 20:00
+          rate: cron(0 2 ? * TUE *)    # 매주 화 11:00 KST
+          enabled: true
+      - schedule:
+          rate: cron(0 11 ? * FRI *)   # 매주 금 20:00 KST
           enabled: true
 
 resources:

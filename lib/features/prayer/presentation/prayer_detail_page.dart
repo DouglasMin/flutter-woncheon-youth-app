@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:woncheon_youth/core/mock/mock_mode.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/member/presentation/block_providers.dart';
 import 'package:woncheon_youth/features/prayer/domain/comment_model.dart';
@@ -149,11 +148,7 @@ class PrayerDetailPage extends ConsumerWidget {
     );
     if (confirmed != true || !context.mounted) return;
     try {
-      if (kMockMode) {
-        await ref.read(mockPrayerRepositoryProvider).deletePrayer(id);
-      } else {
-        await ref.read(prayerRepositoryProvider).deletePrayer(id);
-      }
+      await ref.read(prayerRepositoryProvider).deletePrayer(id);
       await Haptic.light();
       ref.invalidate(prayerDetailProvider(id));
       await ref.read(prayerListProvider.notifier).refresh();
@@ -334,12 +329,10 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     setState(() => _isSending = true);
     await Haptic.light();
     try {
-      if (!kMockMode) {
-        await ref.read(prayerRepositoryProvider).createComment(
-              prayerId: widget.prayerId,
-              content: content,
-            );
-      }
+      await ref.read(prayerRepositoryProvider).createComment(
+            prayerId: widget.prayerId,
+            content: content,
+          );
       _controller.clear();
       if (mounted) ref.invalidate(commentsProvider(widget.prayerId));
     } on DioException {
@@ -379,14 +372,12 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     editController.dispose();
     if (newContent == null || newContent.trim().isEmpty || !mounted) return;
     try {
-      if (!kMockMode) {
-        await ref.read(prayerRepositoryProvider).updateComment(
-              prayerId: widget.prayerId,
-              commentId: comment.commentId,
-              content: newContent.trim(),
-            );
-        ref.invalidate(commentsProvider(widget.prayerId));
-      }
+      await ref.read(prayerRepositoryProvider).updateComment(
+            prayerId: widget.prayerId,
+            commentId: comment.commentId,
+            content: newContent.trim(),
+          );
+      ref.invalidate(commentsProvider(widget.prayerId));
       await Haptic.light();
     } on DioException {
       if (mounted) _showErrorMessage(context, '댓글 수정에 실패했습니다.');
@@ -403,13 +394,11 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      if (!kMockMode) {
-        await ref.read(prayerRepositoryProvider).deleteComment(
-              prayerId: widget.prayerId,
-              commentId: comment.commentId,
-            );
-        ref.invalidate(commentsProvider(widget.prayerId));
-      }
+      await ref.read(prayerRepositoryProvider).deleteComment(
+            prayerId: widget.prayerId,
+            commentId: comment.commentId,
+          );
+      ref.invalidate(commentsProvider(widget.prayerId));
       await Haptic.light();
     } on DioException {
       if (mounted) _showErrorMessage(context, '댓글 삭제에 실패했습니다.');
