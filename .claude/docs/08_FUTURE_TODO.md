@@ -1,87 +1,94 @@
 # 원천청년부 앱 — 남은 TODO
 
-## 현재 완료된 것
+> 마지막 갱신: 2026-05-21
+> 현황: v1.0.4+5 비공개 테스트 트랙 배포 중. 정식 출시 결정 대기.
 
-### Phase 1 (중보기도 MVP)
+---
+
+## 완료된 것
+
+### Phase 1 (중보기도 MVP) — ✅ 완료
 - [x] 회원 인증 (로그인/비번변경/JWT)
 - [x] 중보기도 CRUD (목록/상세/작성/삭제)
 - [x] 기간별 필터링 (이번 주/1개월/3개월/직접 선택)
 - [x] 읽음 표시 (로컬 저장)
 - [x] 댓글/반응 (🙏 토글 + 댓글 CRUD)
-- [x] 다크 모드 (시스템 설정 자동)
-- [x] 스플래시 스크린 (정적 + 애니메이션)
-- [x] 앱 아이콘
+- [x] 다크 모드 + 스플래시 + 앱 아이콘
 - [x] iOS/Android 어댑티브 UI (Cupertino/Material)
-- [x] HapticFeedback
-- [x] Fluent UI Icons
-- [x] 푸시 알림 연동 (APNs 코드 + 시뮬레이터 테스트)
-- [x] 백엔드 배포 (20 Lambda, DynamoDB, API Gateway)
+- [x] HapticFeedback + Fluent UI Icons
+- [x] 푸시 알림: APNs (iOS) + FCM (Android), heads-up popup
+- [x] 백엔드 배포 (20+ Lambda, DynamoDB, API Gateway)
 
-### Phase 2 (출결 관리)
-- [x] Supabase PostgreSQL (관리형, Free Plan)
+### Phase 2 (출결 관리) — ✅ 완료
+- [x] Supabase PostgreSQL (관리형, Free Plan, 단일 인스턴스)
 - [x] 출결 DB 스키마 (groups, group_members, attendance)
 - [x] 출결 Lambda 4개 (myGroup, check, weekly, stats)
-- [x] 목장 데이터 마이그레이션 (13목장, 134명, 557출석)
-- [x] Flutter 출석 체크 화면 (2열 그리드 + 주차 이동)
-- [x] 출석률 통계 화면 (목장별 랭킹)
+- [x] 목장 데이터 마이그레이션 + 5/21 sheet→DB 재동기화 (시트 SoT 정책)
+- [x] Flutter 출석 체크 + 통계 화면
 - [x] 서버 KST 날짜 검증 (일요일/미래/4주이전)
-- [x] 통합 테스트 47개 통과
+
+### App Store / Play Store 심사 대비 — ✅ 완료
+- [x] 사용자 차단 기능 (Guideline 1.2) — 백엔드 + Flutter UI + admin 화면
+- [x] 신고 기능 + admin 검토 페이지 + DynamoDB GSI4
+- [x] 24시간 검토 SOP 문서화
+- [x] 앱 내 문의 (이메일·전화)
+- [x] 계정 삭제 (Guideline 5.1.1(v))
+- [x] Privacy Policy + Apple 심사 노트
+- [x] Play Store 메타데이터
+
+### 운영 인프라 — ✅ 완료
+- [x] admin Next.js 패널 7페이지 (대시보드, 회원, 출결, 기도, 신고, 목장, 가입요청)
+- [x] 비공개 테스트 트랙 배포 (Play Console + TestFlight)
+- [x] 브랜치 분리: main(prod) + dev(작업)
+- [x] main 브랜치 보호 (직접 push 차단)
 
 ---
 
-## $99 없이 지금 할 수 있는 것
+## 정식 출시 직전 1회 작업
 
-### 기능 개발
+> 청년부 공지 직전에 수행. **사용자가 "활성 테스터 = 실제 사용자"로 갈 거라 데이터 정리 작업은 스킵**.
 
-| # | 할 일 | 난이도 | 비고 |
-|---|---|---|---|
-| 1 | 목자 푸시 알림 Lambda (매주 일요일 15:00 KST) | 쉬움 | EventBridge + Lambda 코드만, 실 발송은 $99 이후 |
-| 2 | 관리자 웹 대시보드 (Next.js) | 중간 | 회원 관리, 출결 현황, 기도 관리 |
-| 3 | 관리자 인증 (JWT role 추가) | 쉬움 | DynamoDB Member에 role 필드 추가 |
-| 4 | 신규 회원 등록 API | 쉬움 | 관리자용 CRUD |
-| 5 | 송리스트 기능 (DB + Lambda + Flutter UI) | 중간 | DynamoDB or Supabase PG |
-| 6 | 카카오채널 연동 (알림톡 API) | 중간 | 카카오 비즈니스 계정 필요 |
-| 7 | 소셜 로그인 (Apple/Google) | 중간 | Apple은 $99 이후 |
-| 8 | 오프라인 모드 (기도문 로컬 캐싱) | 중간 | Drift 패키지 재추가 |
-| 9 | 공지사항 기능 | 쉬움 | DynamoDB + Flutter UI |
-| 10 | Admin 차단 모니터링 미니 화면 | 쉬움 | 회원 관리 페이지에 "차단한 사람 수 / 차단당한 횟수" 컬럼 추가. 신고 누적 전 문제 사용자 조기 식별. 운영 6개월 후 패턴 파악 어려울 때 도입 권장. YAGNI 원칙으로 현재 보류. |
+- [ ] dev → main 머지 (정식 출시용 빌드 커밋)
+- [ ] main에서 빌드 (`flutter build appbundle --release`, `flutter build ipa --release`)
+- [ ] App Store Connect 정식 트랙 제출
+- [ ] Play Console 프로덕션 트랙 제출
+- [ ] 청년부에 공지 (가입 절차 + 앱 사용법 안내)
 
-### UI/UX 개선
+---
 
-| # | 할 일 | 난이도 |
+## 출시 후 운영 (시간 되는 대로)
+
+### Admin 보강 (별도 배포, 앱 무관)
+| # | 작업 | 비고 |
 |---|---|---|
-| 1 | 피그마 디자인 반영 (전체 화면) | 중간 |
-| 2 | 출석 통계 차트 (fl_chart) | 쉬움 |
-| 3 | 프로필/설정 화면 | 쉬움 |
-| 4 | 로그아웃 기능 | 쉬움 |
-| 5 | 비밀번호 재설정 (관리자 초기화) | 쉬움 |
+| 1 | 비밀번호 재설정 UI | 회원이 비번 잊으면 운영자가 admin에서 초기화. 현재는 DynamoDB 직접 수정 |
+| 2 | 회원 비활성화 UI | 신고 누적 사용자 차단. 현재는 `isDisabled: true` 수동 set |
+| 3 | 공지사항 기능 (앱+백엔드+admin) | 청년부 일괄 안내 채널 — 앱 코드 변경 필요해 신중 |
+| 4 | 차단 모니터링 미니 화면 | YAGNI로 보류. 신고로 패턴 잡기 어려워지면 도입 |
+
+### 운영 안전망
+| # | 작업 | 비고 |
+|---|---|---|
+| 1 | CloudWatch Alarms (Lambda 에러율, API Gateway 5xx) | 장애 자동 알림 |
+| 2 | DynamoDB on-demand backup 활성화 | 데이터 손실 대비 |
+| 3 | Sentry / Crashlytics | Flutter 크래시 자동 수집 (Flutter 변경 필요 — 조심) |
+| 4 | Lambda 구조화 로깅 (pino 등) | 트러블슈팅 효율 |
+
+### 기능 추가
+| # | 작업 | 비고 |
+|---|---|---|
+| 1 | 목자 출석 입력 리마인더 푸시 (일요일 오후) | EventBridge cron 1개 추가 |
+| 2 | 댓글 신고 UI + admin 본문 미리보기 | parentPrayerId 저장 확장 |
+| 3 | 출석 통계 차트 (`fl_chart`) | Flutter 시각화 |
+| 4 | 송리스트 (찬양팀 곡 목록) | DynamoDB or Supabase PG |
+| 5 | 카카오채널 알림톡 | 카카오 비즈니스 계정 필요 |
 
 ### 코드 품질
-
-| # | 할 일 | 난이도 |
+| # | 작업 | 비고 |
 |---|---|---|
-| 1 | Flutter 위젯 테스트 추가 | 중간 |
-| 2 | 기도 API 통합 테스트 추가 | 쉬움 |
-| 3 | CI/CD 파이프라인 (GitHub Actions) | 중간 |
-
----
-
-## $99 (Apple Developer) 가입 후 할 것
-
-순서대로 진행:
-
-| # | 할 일 | 비고 |
-|---|---|---|
-| 1 | Apple Developer Console에서 APNs Key (.p8) 발급 | Keys → New Key → APNs 체크 |
-| 2 | AWS SNS Platform Application 생성 (APNs) | .p8 키 + Key ID + Team ID 등록 |
-| 3 | SSM에 SNS iOS Platform ARN 등록 | `/woncheon/dev/sns-ios-arn` |
-| 4 | Runner.entitlements에 aps-environment 복원 | 이미 파일 있음, 비워둔 상태 |
-| 5 | 실기기 푸시 테스트 | 디바이스 토큰 등록 + 실 발송 확인 |
-| 6 | TestFlight 배포 | Xcode → Archive → Upload to App Store Connect |
-| 7 | 내부 테스터 그룹 추가 + 테스트 | 청년부 리더들 대상 |
-| 8 | App Store 심사 제출 | 스크린샷, 설명, 개인정보처리방침 필요 |
-| 9 | App Store 출시 | 심사 통과 후 |
-| 10 | prod 환경 배포 | `sls deploy --stage prod` + SSM prod 파라미터 |
+| 1 | Flutter 위젯 테스트 추가 | 핵심 플로우(로그인, 기도 작성, 차단) |
+| 2 | 기도 API 통합 테스트 추가 | 백엔드 회귀 방지 |
+| 3 | CI/CD 파이프라인 (GitHub Actions) | PR 시 dart analyze + tsc + flutter test |
 
 ---
 
@@ -123,33 +130,25 @@
 |---|---|---|---|
 | DynamoDB | AWS | woncheon-dev (PAY_PER_REQUEST), 리전 ap-northeast-2 | 무료 (200명 규모) |
 | PostgreSQL | **Supabase** | pooler `aws-1-ap-northeast-2.pooler.supabase.com:5432`, project `hhnknrrcmonvcmqlkxii` | Supabase Free Plan |
-| Lambda | AWS | 20개 함수 | Free Tier 범위 |
+| Lambda | AWS | 20+ 함수, 단일 `dev` stage | Free Tier 범위 |
 | API Gateway | AWS | REST API | Free Tier 범위 |
 | SSM Parameter Store | AWS | 7개 파라미터 (PG 자격증명, JWT secret 등) | 무료 |
 | S3 | AWS | Serverless 배포 아티팩트 | 거의 무료 |
+| EventBridge | AWS | 주간 알림 스케줄 2개 (화 11시, 금 20시 KST) | 무료 |
 
-> **주의**: PostgreSQL은 AWS RDS가 아니라 **Supabase** 관리형 호스팅. 호스트는 ap-northeast-2 리전이지만 사업자는 Supabase, Inc. (미국). 개인정보처리방침 Section 6에 명시됨.
+> **인프라 정책**: 단일 DB / 단일 Lambda stage로 운영. dev/prod 인프라 분리 안 함. 코드 환경 분리는 git 브랜치(main=prod, dev=작업)로 처리.
 
-## 참고: 테스트 계정
+> **PostgreSQL 명시**: AWS RDS가 아니라 **Supabase** 관리형 호스팅. 호스트는 ap-northeast-2이지만 사업자는 Supabase, Inc. (미국). 개인정보처리방침 Section 6에 명시됨.
 
-| 이름 | 역할 | 비밀번호 | 비고 |
-|---|---|---|---|
-| 민동익 | 목원 | 11111111 | 비번 변경 완료 |
-| 김지현 | 목자 | 11111111 | 비번 변경 완료 |
-| 조은주 | 목자 | 11111111 | 비번 변경 완료 |
-| 조성주 | 목자 | 11111111 | 비번 변경 완료 |
-| 기타 | - | woncheon2025 | 첫 로그인 시 변경 필요 |
+---
 
-## 배포 전 필수 복구 작업
+## 참고: 활성 사용자 (= 정식 출시 후에도 그대로 사용)
 
-> prod 배포 또는 실 서비스 전에 반드시 수행
-
-- [ ] 테스트 계정 비밀번호 초기화 (민동익, 김지현, 조은주, 조성주 → `isFirstLogin: true` + 기본PW 복원)
-- [ ] 테스트용 기도 게시물 삭제
-- [ ] 테스트용 댓글/반응 정리
-- [ ] 테스트 출석 데이터 확인 (엑셀 원본과 비교)
-- [ ] `kMockMode = false` 확인 (이미 false)
-- [ ] API URL을 prod 엔드포인트로 변경
-- [ ] SSM prod 파라미터 등록 (JWT secrets, PG 접속정보)
-- [ ] `sls deploy --stage prod`
-- [ ] Runner.entitlements에 `aps-environment: production` 설정
+| 이름 | 역할 | 비고 |
+|---|---|---|
+| 민동익 | 목원 | 개발자 본인 |
+| 김지현 | 목자 | 비공개 테스터 |
+| 조은주 | 목자 | 비공개 테스터 |
+| 조성주 | 목자 | 비공개 테스터 |
+| appreview | reviewer | Apple/Google 심사용 — 정식 출시 후 유지 결정 |
+| 그 외 130명 | - | DB에 등록만, 실제 가입은 청년부 공지 후 진행 |

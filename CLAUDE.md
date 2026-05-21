@@ -93,7 +93,7 @@ src/functions/
     get.ts
     delete.ts
   notification/
-    sendWeekly.ts     # EventBridge cron: 매주 토요일 KST 20:00
+    sendWeekly.ts     # EventBridge cron: 매주 화 11:00 + 금 20:00 KST
 ```
 
 ---
