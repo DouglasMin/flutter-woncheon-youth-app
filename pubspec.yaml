@@ -1,7 +1,7 @@
 name: woncheon_youth
 description: "Woncheon Youth App"
 publish_to: 'none'
-version: 1.0.5+6
+version: 1.0.6+7
 
 environment:
   sdk: ^3.11.3
@@ -37,6 +37,15 @@ dependencies:
   flutter_native_splash: ^2.4.7
   url_launcher: ^6.3.2
   app_settings: ^7.0.0
+
+  # App update detection
+  # - Android: 공식 Play Core In-App Updates 래퍼 (Android 5.0+, Play 설치 시에만 동작)
+  # - iOS: package_info_plus + iTunes Lookup API + url_launcher 조합
+  in_app_update: ^4.2.5
+  package_info_plus: ^9.0.1
+
+  # Charts
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:

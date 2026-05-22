@@ -225,14 +225,30 @@ class _GroupHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            '$groupName 목장',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w700,
-              color: wc.text,
-              letterSpacing: -0.6,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Text(
+                  '$groupName 목장',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w700,
+                    color: wc.text,
+                    letterSpacing: -0.6,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: '내 출석 통계',
+                onPressed: () => context.push(AppRoutes.attendanceStats),
+                icon: Icon(
+                  FluentIcons.data_pie_24_regular,
+                  color: wc.textSec,
+                  size: 22,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           Row(

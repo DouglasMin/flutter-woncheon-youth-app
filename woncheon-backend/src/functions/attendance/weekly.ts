@@ -60,14 +60,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   );
   const todayRow = todayResult.rows[0];
 
-  // 3. 본인의 최근 4주 히스토리 (현재 주일 포함 과거 방향)
+  // 3. 본인의 최근 12주 히스토리 (현재 주일 포함 과거 방향) — 차트 시각화용
   const historyResult = await pool.query<{
     date: string;
     is_present: boolean;
   }>(
     `WITH weeks AS (
        SELECT ($1::date - (n * INTERVAL '7 days'))::date AS week_date
-       FROM generate_series(0, 3) AS n
+       FROM generate_series(0, 11) AS n
      )
      SELECT w.week_date::text AS date,
             COALESCE(a.is_present, FALSE) AS is_present
