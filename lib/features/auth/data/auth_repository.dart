@@ -29,6 +29,11 @@ class AuthRepository {
     await _storage.setMemberId(member['memberId'] as String);
     await _storage.setMemberName(member['name'] as String);
 
+    // isFirstLogin 플래그 저장 — splash/router가 비번 변경 페이지로
+    // 강제 이동 여부를 판단하는 source of truth.
+    final isFirstLogin = data['isFirstLogin'] as bool? ?? false;
+    await _storage.setIsFirstLogin(value: isFirstLogin);
+
     // 차단 목록 — 서버 응답이 예상 shape이 아니어도 로그인 자체는 성공해야 함
     try {
       final raw = member['blockedMembers'];
@@ -60,6 +65,9 @@ class AuthRepository {
         'newPassword': newPassword,
       },
     );
+    // 비번 변경 성공 시점에 초기 비번 플래그 해제. 이후 재실행해도
+    // splash가 home으로 보내줌.
+    await _storage.setIsFirstLogin(value: false);
   }
 
   Future<void> logout() async {

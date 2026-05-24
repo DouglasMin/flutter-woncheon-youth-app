@@ -44,13 +44,17 @@ class _SplashPageState extends ConsumerState<SplashPage>
     await AppUpdateService.ensureUpToDate(context);
     if (!mounted) return;
 
-    final token = await ref.read(secureStorageServiceProvider).getAccessToken();
+    final storage = ref.read(secureStorageServiceProvider);
+    final token = await storage.getAccessToken();
     if (!mounted) return;
-    if (token != null) {
-      context.go(AppRoutes.home);
-    } else {
+    if (token == null) {
       context.go(AppRoutes.login);
+      return;
     }
+    // 초기 비번 미변경 상태에서 앱 종료한 사용자는 다시 changePassword로.
+    final isFirstLogin = await storage.getIsFirstLogin();
+    if (!mounted) return;
+    context.go(isFirstLogin ? AppRoutes.changePassword : AppRoutes.home);
   }
 
   @override

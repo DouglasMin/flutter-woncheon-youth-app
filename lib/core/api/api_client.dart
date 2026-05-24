@@ -43,12 +43,25 @@ class _TokenRefreshInterceptor extends QueuedInterceptor {
     handler.next(options);
   }
 
+  /// Auth endpoint들의 401은 "사용자 자격 증명 실패"라는 의미라서
+  /// refresh 시도/강제 로그아웃 대상이 아니다. 호출자(login_page,
+  /// change_password_page)가 직접 에러 메시지를 띄워 처리.
+  bool _isAuthEndpoint(RequestOptions options) {
+    final path = options.path;
+    return path == Endpoints.login ||
+        path == Endpoints.changePassword ||
+        path == Endpoints.refresh;
+  }
+
   @override
   Future<void> onError(
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401) {
+    final is401 = err.response?.statusCode == 401;
+    final isAuth = _isAuthEndpoint(err.requestOptions);
+
+    if (is401 && !isAuth) {
       try {
         final refreshed = await _tryRefreshToken();
         if (refreshed) {

@@ -10,6 +10,7 @@ import 'package:woncheon_youth/core/push/push_token_registrar.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/auth/presentation/auth_providers.dart';
+import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
@@ -64,10 +65,9 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     await Haptic.medium();
 
     try {
-      await ref.read(authRepositoryProvider).changePassword(
-            currentPassword: current,
-            newPassword: newPw,
-          );
+      await ref
+          .read(authRepositoryProvider)
+          .changePassword(currentPassword: current, newPassword: newPw);
 
       if (!mounted) return;
       unawaited(Haptic.light());
@@ -83,107 +83,144 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     }
   }
 
+  /// 비번 변경 화면을 빠져나가는 유일한 출구.
+  /// router redirect가 isFirstLogin=true 상태에서는 무조건 이 화면으로
+  /// 되돌려보내기 때문에 단순 pop으로는 함정. 명시적으로 secure storage를
+  /// 비우고 로그인 화면으로 보내준다.
+  ///
+  /// PopScope의 void 콜백에서 fire-and-forget 으로 호출되므로 내부에서
+  /// 모든 예외를 잡아 unhandled async error로 새지 않게 한다.
+  Future<void> _cancelAndReturnToLogin() async {
+    try {
+      final confirmed = await showAdaptiveConfirmDialog(
+        context,
+        title: '비밀번호 변경 취소',
+        content: '취소하면 로그아웃되고 로그인 화면으로 돌아갑니다.\n계속할까요?',
+        confirmText: '로그아웃',
+        isDestructive: true,
+      );
+      if (confirmed != true || !mounted) return;
+      await ref.read(secureStorageServiceProvider).clearAll();
+      if (!mounted) return;
+      context.go(AppRoutes.login);
+    } on Object catch (e, st) {
+      debugPrint('[change_password] cancel flow failed: $e\n$st');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final wc = context.wc;
-    return Scaffold(
-      backgroundColor: wc.bg,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              IconButton(
-                onPressed: () => context.pop(),
-                padding: EdgeInsets.zero,
-                alignment: Alignment.centerLeft,
-                icon: Icon(FluentIcons.chevron_left_24_regular,
-                    color: wc.textSec, size: 26),
-              ),
-              const SizedBox(height: 24),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: wc.accentSoft,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    FluentIcons.lock_closed_24_regular,
-                    size: 22,
-                    color: wc.accentInk,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        // 콜백은 void Function이므로 Future를 fire-and-forget으로 띄운다.
+        // 예외는 _cancelAndReturnToLogin 내부에서 모두 catch한다.
+        unawaited(_cancelAndReturnToLogin());
+      },
+      child: Scaffold(
+        backgroundColor: wc.bg,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                IconButton(
+                  onPressed: _cancelAndReturnToLogin,
+                  padding: EdgeInsets.zero,
+                  alignment: Alignment.centerLeft,
+                  icon: Icon(
+                    FluentIcons.chevron_left_24_regular,
+                    color: wc.textSec,
+                    size: 26,
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                '새 비밀번호를\n설정해주세요',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  color: wc.text,
-                  letterSpacing: -0.5,
-                  height: 1.25,
+                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: wc.accentSoft,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      FluentIcons.lock_closed_24_regular,
+                      size: 22,
+                      color: wc.accentInk,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                '보안을 위해 처음 로그인 시에는\n비밀번호 변경이 필요합니다.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: wc.textSec,
-                  height: 1.55,
-                ),
-              ),
-              const SizedBox(height: 30),
-              _field(
-                controller: _currentController,
-                hint: '현재 비밀번호',
-                obscure: true,
-                action: TextInputAction.next,
-              ),
-              const SizedBox(height: 10),
-              _field(
-                controller: _newController,
-                hint: '새 비밀번호 (8자 이상)',
-                obscure: true,
-                action: TextInputAction.next,
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 10),
-              _field(
-                controller: _confirmController,
-                hint: '비밀번호 확인',
-                obscure: true,
-                action: TextInputAction.done,
-                onChanged: (_) => setState(() {}),
-                onSubmitted: (_) => _handleChange(),
-              ),
-              if (_errorMessage != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 18),
                 Text(
-                  _errorMessage!,
-                  style: TextStyle(color: wc.danger, fontSize: 12),
+                  '새 비밀번호를\n설정해주세요',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: wc.text,
+                    letterSpacing: -0.5,
+                    height: 1.25,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '보안을 위해 처음 로그인 시에는\n비밀번호 변경이 필요합니다.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: wc.textSec,
+                    height: 1.55,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                _field(
+                  controller: _currentController,
+                  hint: '현재 비밀번호',
+                  obscure: true,
+                  action: TextInputAction.next,
+                ),
+                const SizedBox(height: 10),
+                _field(
+                  controller: _newController,
+                  hint: '새 비밀번호 (8자 이상)',
+                  obscure: true,
+                  action: TextInputAction.next,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 10),
+                _field(
+                  controller: _confirmController,
+                  hint: '비밀번호 확인',
+                  obscure: true,
+                  action: TextInputAction.done,
+                  onChanged: (_) => setState(() {}),
+                  onSubmitted: (_) => _handleChange(),
+                ),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(color: wc.danger, fontSize: 12),
+                  ),
+                ],
+                const Spacer(),
+                WCButton(
+                  onPressed: (_isLoading || !_valid) ? null : _handleChange,
+                  disabled: _isLoading || !_valid,
+                  child: _isLoading
+                      ? SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: wc.bg,
+                          ),
+                        )
+                      : const Text('변경하고 시작하기'),
                 ),
               ],
-              const Spacer(),
-              WCButton(
-                onPressed: (_isLoading || !_valid) ? null : _handleChange,
-                disabled: _isLoading || !_valid,
-                child: _isLoading
-                    ? SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: wc.bg,
-                        ),
-                      )
-                    : const Text('변경하고 시작하기'),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -211,8 +248,10 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
         filled: true,
         fillColor: wc.surface,
         hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 15,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: wc.border),

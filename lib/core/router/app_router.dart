@@ -59,8 +59,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoggedIn = token != null;
       final isLoginRoute = loc == AppRoutes.login;
 
-      if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
-      if (isLoggedIn && isLoginRoute) return AppRoutes.home;
+      if (!isLoggedIn) {
+        return isLoginRoute ? null : AppRoutes.login;
+      }
+
+      // 로그인된 사용자는 isFirstLogin이 우선 결정 — login 경로 접근 포함.
+      if (await storage.getIsFirstLogin()) return AppRoutes.changePassword;
+      if (isLoginRoute) return AppRoutes.home;
       return null;
     },
     routes: [

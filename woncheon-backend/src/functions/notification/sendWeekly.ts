@@ -1,5 +1,5 @@
 import type { ScheduledHandler } from 'aws-lambda';
-import { QueryCommand, PutCommand } from '@aws-sdk/lib-dynamodb';
+import { QueryCommand, PutCommand, BatchGetCommand } from '@aws-sdk/lib-dynamodb';
 import { docClient, TABLE_NAME } from '../../libs/dynamo.js';
 import { publishToEndpoint } from '../../libs/sns.js';
 
@@ -23,8 +23,13 @@ async function getLastNotificationTime(): Promise<string> {
   return fallback.toISOString();
 }
 
+/**
+ * GSI3는 ProjectionType: KEYS_ONLY 라서 PK/SK만 반환한다.
+ * snsEndpoint 등 실제 attribute는 base table에 있으므로 BatchGet으로 보강.
+ */
 async function queryAllDevices(): Promise<Array<Record<string, unknown>>> {
-  const devices: Array<Record<string, unknown>> = [];
+  // 1. GSI3에서 디바이스 row의 키만 수집
+  const keys: Array<{ PK: string; SK: string }> = [];
   let lastKey: Record<string, unknown> | undefined;
 
   do {
@@ -37,10 +42,27 @@ async function queryAllDevices(): Promise<Array<Record<string, unknown>>> {
         ExclusiveStartKey: lastKey,
       }),
     );
-    devices.push(...(result.Items ?? []));
+    for (const item of result.Items ?? []) {
+      if (typeof item.PK === 'string' && typeof item.SK === 'string') {
+        keys.push({ PK: item.PK, SK: item.SK });
+      }
+    }
     lastKey = result.LastEvaluatedKey;
   } while (lastKey);
 
+  if (keys.length === 0) return [];
+
+  // 2. base table에서 BatchGet으로 full row 조회 (snsEndpoint 등 포함)
+  const devices: Array<Record<string, unknown>> = [];
+  for (let i = 0; i < keys.length; i += 100) {
+    const slice = keys.slice(i, i + 100);
+    const batch = await docClient.send(
+      new BatchGetCommand({
+        RequestItems: { [TABLE_NAME]: { Keys: slice } },
+      }),
+    );
+    devices.push(...(batch.Responses?.[TABLE_NAME] ?? []));
+  }
   return devices;
 }
 
