@@ -87,18 +87,25 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
   /// router redirect가 isFirstLogin=true 상태에서는 무조건 이 화면으로
   /// 되돌려보내기 때문에 단순 pop으로는 함정. 명시적으로 secure storage를
   /// 비우고 로그인 화면으로 보내준다.
+  ///
+  /// PopScope의 void 콜백에서 fire-and-forget 으로 호출되므로 내부에서
+  /// 모든 예외를 잡아 unhandled async error로 새지 않게 한다.
   Future<void> _cancelAndReturnToLogin() async {
-    final confirmed = await showAdaptiveConfirmDialog(
-      context,
-      title: '비밀번호 변경 취소',
-      content: '취소하면 로그아웃되고 로그인 화면으로 돌아갑니다.\n계속할까요?',
-      confirmText: '로그아웃',
-      isDestructive: true,
-    );
-    if (confirmed != true || !mounted) return;
-    await ref.read(secureStorageServiceProvider).clearAll();
-    if (!mounted) return;
-    context.go(AppRoutes.login);
+    try {
+      final confirmed = await showAdaptiveConfirmDialog(
+        context,
+        title: '비밀번호 변경 취소',
+        content: '취소하면 로그아웃되고 로그인 화면으로 돌아갑니다.\n계속할까요?',
+        confirmText: '로그아웃',
+        isDestructive: true,
+      );
+      if (confirmed != true || !mounted) return;
+      await ref.read(secureStorageServiceProvider).clearAll();
+      if (!mounted) return;
+      context.go(AppRoutes.login);
+    } on Object catch (e, st) {
+      debugPrint('[change_password] cancel flow failed: $e\n$st');
+    }
   }
 
   @override
@@ -106,9 +113,11 @@ class _ChangePasswordPageState extends ConsumerState<ChangePasswordPage> {
     final wc = context.wc;
     return PopScope(
       canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
+      onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        await _cancelAndReturnToLogin();
+        // 콜백은 void Function이므로 Future를 fire-and-forget으로 띄운다.
+        // 예외는 _cancelAndReturnToLogin 내부에서 모두 catch한다.
+        unawaited(_cancelAndReturnToLogin());
       },
       child: Scaffold(
         backgroundColor: wc.bg,
