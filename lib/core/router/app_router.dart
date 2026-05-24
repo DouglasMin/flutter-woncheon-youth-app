@@ -61,6 +61,11 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       if (!isLoggedIn && !isLoginRoute) return AppRoutes.login;
       if (isLoggedIn && isLoginRoute) return AppRoutes.home;
+
+      // 초기 비번 변경 안 끝낸 사용자는 어디로 가든 changePassword로 강제.
+      if (isLoggedIn && await storage.getIsFirstLogin()) {
+        return AppRoutes.changePassword;
+      }
       return null;
     },
     routes: [

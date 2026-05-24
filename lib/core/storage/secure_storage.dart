@@ -37,6 +37,20 @@ class SecureStorageService {
   Future<void> setMemberName(String name) =>
       _storage.write(key: AppConstants.memberNameKey, value: name);
 
+  /// 초기 비번 상태 플래그.
+  /// - true: 아직 초기 비번. changePassword 강제.
+  /// - false: 비번 변경 완료. 정상 진입.
+  /// 미설정(null)일 땐 보수적으로 false 취급 (옛 사용자 대상 호환).
+  Future<bool> getIsFirstLogin() async {
+    final raw = await _storage.read(key: AppConstants.isFirstLoginKey);
+    return raw == 'true';
+  }
+
+  Future<void> setIsFirstLogin({required bool value}) => _storage.write(
+        key: AppConstants.isFirstLoginKey,
+        value: value ? 'true' : 'false',
+      );
+
   // Tokens
   Future<void> saveTokens({
     required String accessToken,
