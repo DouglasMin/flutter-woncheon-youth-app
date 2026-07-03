@@ -51,17 +51,17 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
     });
     await Haptic.medium();
     try {
-      await ref.read(prayerRepositoryProvider).createPrayer(
-            content: content,
-            isAnonymous: _isAnonymous,
-          );
+      await ref
+          .read(prayerRepositoryProvider)
+          .createPrayer(content: content, isAnonymous: _isAnonymous);
       if (!mounted) return;
       unawaited(Haptic.light());
       context.pop(true);
     } on DioException catch (e) {
       await Haptic.heavy();
-      setState(() =>
-          _errorMessage = getApiErrorMessage(e, fallback: '등록에 실패했습니다.'));
+      setState(
+        () => _errorMessage = getApiErrorMessage(e, fallback: '등록에 실패했습니다.'),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -96,10 +96,7 @@ class _PrayerCreatePageState extends ConsumerState<PrayerCreatePage> {
                       foregroundColor: wc.textSec,
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    child: const Text(
-                      '취소',
-                      style: TextStyle(fontSize: 15),
-                    ),
+                    child: const Text('취소', style: TextStyle(fontSize: 15)),
                   ),
                   Expanded(
                     child: Text(
@@ -276,9 +273,7 @@ class _Footer extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   color: overLimit ? wc.danger : wc.textTer,
-                  fontFeatures: const [
-                    FontFeature.tabularFigures(),
-                  ],
+                  fontFeatures: const [FontFeature.tabularFigures()],
                 ),
               ),
             ],

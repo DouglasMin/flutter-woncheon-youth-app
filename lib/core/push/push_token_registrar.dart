@@ -27,8 +27,9 @@ Future<void> registerDeviceTokenAfterAuth(WidgetRef ref) async {
   // 1. 직접 fetch 시도 (Android에서 즉시 토큰 반환, iOS에선 null)
   String? token;
   try {
-    token = await const MethodChannel('com.woncheon.youth/push')
-        .invokeMethod<String>('getDeviceToken');
+    token = await const MethodChannel(
+      'com.woncheon.youth/push',
+    ).invokeMethod<String>('getDeviceToken');
   } on PlatformException catch (e) {
     debugPrint('[push] getDeviceToken 실패: $e');
   }
@@ -58,10 +59,13 @@ Future<void> registerDeviceTokenAfterAuth(WidgetRef ref) async {
 
 Future<void> _postToken(WidgetRef ref, String token, String platform) async {
   try {
-    await ref.read(apiClientProvider).dio.post<Map<String, dynamic>>(
-      '/auth/device-token',
-      data: {'token': token, 'platform': platform},
-    );
+    await ref
+        .read(apiClientProvider)
+        .dio
+        .post<Map<String, dynamic>>(
+          '/auth/device-token',
+          data: {'token': token, 'platform': platform},
+        );
     debugPrint('[push] 토큰 등록 성공 ($platform)');
   } on DioException catch (e) {
     debugPrint('[push] 토큰 등록 실패: ${e.message}');

@@ -18,10 +18,8 @@ class LoginResponse with _$LoginResponse {
 
 @freezed
 class MemberInfo with _$MemberInfo {
-  const factory MemberInfo({
-    required String memberId,
-    required String name,
-  }) = _MemberInfo;
+  const factory MemberInfo({required String memberId, required String name}) =
+      _MemberInfo;
 
   factory MemberInfo.fromJson(Map<String, dynamic> json) =>
       _$MemberInfoFromJson(json);

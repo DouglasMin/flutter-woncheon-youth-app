@@ -23,9 +23,13 @@ class AttendanceCheckPage extends ConsumerWidget {
       backgroundColor: wc.bg,
       body: SafeArea(
         child: weeklyAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => _ErrorView(
-            onRetry: () => ref.invalidate(weeklyAttendanceProvider),
+          loading: () => const WCLoadingView(label: '목장 정보를 불러오는 중'),
+          error: (_, __) => WCStateView(
+            icon: FluentIcons.error_circle_24_regular,
+            title: '목장 정보를 불러올 수 없습니다',
+            message: '잠시 후 다시 시도해주세요.',
+            actionLabel: '다시 시도',
+            onAction: () => ref.invalidate(weeklyAttendanceProvider),
           ),
           data: (data) => _GroupPageBody(data: data),
         ),
@@ -62,8 +66,7 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
       final fresh = next.valueOrNull;
       final roster = fresh?.members;
       if (fresh == null || roster == null) return;
-      if (_syncedDate == fresh.date &&
-          _editedMembers.length == roster.length) {
+      if (_syncedDate == fresh.date && _editedMembers.length == roster.length) {
         return;
       }
       setState(() {
@@ -75,18 +78,17 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
 
     final data = widget.data;
     final members = data.members ?? const <GroupMember>[];
-    final displayMembers =
-        _syncedDate == data.date ? _editedMembers : members;
-    final presentCount =
-        displayMembers.where((m) => m.isPresent).length;
+    final displayMembers = _syncedDate == data.date ? _editedMembers : members;
+    final presentCount = displayMembers.where((m) => m.isPresent).length;
     final parsed = DateTime.parse(data.date);
     final dateLabel = DateFormat('yyyy년 M월 d일 (E)', 'ko').format(parsed);
 
     return RefreshIndicator(
       color: wc.accent,
       onRefresh: () async {
-        ref.invalidate(weeklyAttendanceProvider);
-        ref.invalidate(groupPrayersProvider);
+        ref
+          ..invalidate(weeklyAttendanceProvider)
+          ..invalidate(groupPrayersProvider);
         await ref.read(weeklyAttendanceProvider.future);
       },
       child: CustomScrollView(
@@ -102,7 +104,12 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.fromLTRB(
+                WCSpacing.pageX,
+                WCSpacing.xs,
+                WCSpacing.pageX,
+                WCSpacing.md,
+              ),
               child: _RosterStrip(
                 members: displayMembers,
                 showRate: data.isLeader,
@@ -113,7 +120,12 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
           if (data.isLeader)
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                padding: const EdgeInsets.fromLTRB(
+                  WCSpacing.pageX,
+                  0,
+                  WCSpacing.pageX,
+                  WCSpacing.sectionGap,
+                ),
                 child: _ConfirmButton(
                   present: presentCount,
                   total: displayMembers.length,
@@ -126,13 +138,23 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
           else
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                padding: const EdgeInsets.fromLTRB(
+                  WCSpacing.pageX,
+                  0,
+                  WCSpacing.pageX,
+                  WCSpacing.xs,
+                ),
                 child: _MyStatsCard(stats: data.stats),
               ),
             ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 10),
+              padding: const EdgeInsets.fromLTRB(
+                WCSpacing.pageX,
+                WCSpacing.md,
+                WCSpacing.pageX,
+                WCSpacing.sm,
+              ),
               child: Text(
                 '목장 기도제목',
                 style: TextStyle(
@@ -145,7 +167,9 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
             ),
           ),
           const _GroupPrayers(),
-          const SliverToBoxAdapter(child: SizedBox(height: 120)),
+          const SliverToBoxAdapter(
+            child: SizedBox(height: WCSpacing.bottomNavClearance),
+          ),
         ],
       ),
     );
@@ -181,9 +205,9 @@ class _GroupPageBodyState extends ConsumerState<_GroupPageBody> {
       if (mounted) setState(() => _saved = true);
     } on Exception {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('저장에 실패했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('저장에 실패했습니다.')));
       }
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -212,54 +236,41 @@ class _GroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final wc = context.wc;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 24, 24, 14),
+      padding: EdgeInsets.zero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            date,
-            style: TextStyle(
-              fontSize: 12,
-              color: wc.textTer,
-              letterSpacing: 0.5,
+          WCHeader(
+            eyebrow: date,
+            title: '$groupName 목장',
+            trailing: IconButton(
+              tooltip: '내 출석 통계',
+              onPressed: () => context.push(AppRoutes.attendanceStats),
+              icon: Icon(
+                FluentIcons.data_pie_24_regular,
+                color: wc.textSec,
+                size: 22,
+              ),
+            ),
+            padding: const EdgeInsets.fromLTRB(
+              WCSpacing.pageX,
+              WCSpacing.xl,
+              WCSpacing.pageX,
+              WCSpacing.sm,
             ),
           ),
-          const SizedBox(height: 6),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Text(
-                  '$groupName 목장',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w700,
-                    color: wc.text,
-                    letterSpacing: -0.6,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: WCSpacing.pageX),
+            child: Row(
+              children: [
+                if (isLeader)
+                  const Padding(
+                    padding: EdgeInsets.only(right: WCSpacing.xs),
+                    child: WCPill(tone: WCPillTone.accent, child: Text('리더')),
                   ),
-                ),
-              ),
-              IconButton(
-                tooltip: '내 출석 통계',
-                onPressed: () => context.push(AppRoutes.attendanceStats),
-                icon: Icon(
-                  FluentIcons.data_pie_24_regular,
-                  color: wc.textSec,
-                  size: 22,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              if (isLeader)
-                const Padding(
-                  padding: EdgeInsets.only(right: 6),
-                  child: WCPill(tone: WCPillTone.accent, child: Text('리더')),
-                ),
-              WCPill(child: Text('${members.length}명')),
-            ],
+                WCPill(child: Text('${members.length}명')),
+              ],
+            ),
           ),
         ],
       ),
@@ -288,7 +299,7 @@ class _RosterStrip extends StatelessWidget {
     final wc = context.wc;
     if (members.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: WCSpacing.sm),
         child: Text(
           '목장원이 등록되지 않았어요.',
           style: TextStyle(fontSize: 13, color: wc.textTer),
@@ -324,18 +335,19 @@ class _MemberDot extends StatelessWidget {
   Widget build(BuildContext context) {
     final wc = context.wc;
     final present = member.isPresent;
-    final initial =
-        member.memberName.isEmpty ? '?' : member.memberName.characters.first;
+    final initial = member.memberName.isEmpty
+        ? '?'
+        : member.memberName.characters.first;
     final rate = member.rate;
 
     // 출석률별 색상 (리더 전용 표시)
     final Color rateColor = rate == null
         ? wc.textTer
         : rate >= 80
-            ? wc.success
-            : rate >= 50
-                ? wc.accent
-                : wc.danger;
+        ? wc.success
+        : rate >= 50
+        ? wc.accent
+        : wc.danger;
 
     return SizedBox(
       width: 60,
@@ -425,13 +437,8 @@ class _MyStatsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final wc = context.wc;
     final ratio = (stats.rate / 100).clamp(0.0, 1.0);
-    return Container(
+    return WCCard(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-      decoration: BoxDecoration(
-        color: wc.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: wc.border),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -524,15 +531,15 @@ class _ConfirmButton extends StatelessWidget {
       children: [
         Material(
           color: saved ? wc.accentSoft : wc.text,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(WCRadius.card),
           child: InkWell(
             onTap: (saved || isSaving) ? null : onTap,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(WCRadius.card),
             child: Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 16),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(WCRadius.card),
                 border: saved
                     ? Border.all(color: wc.accent.withValues(alpha: 0.33))
                     : null,
@@ -590,10 +597,7 @@ class _ConfirmButton extends StatelessWidget {
             padding: const EdgeInsets.only(top: 8),
             child: Text(
               '목원들에게 출석 결과가 전달되었어요',
-              style: TextStyle(
-                fontSize: 11,
-                color: context.wc.textTer,
-              ),
+              style: TextStyle(fontSize: 11, color: context.wc.textTer),
             ),
           ),
       ],
@@ -610,67 +614,34 @@ class _GroupPrayers extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final wc = context.wc;
     final async = ref.watch(groupPrayersProvider);
     return async.when(
       loading: () => const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
-          child: Center(child: CircularProgressIndicator()),
-        ),
+        child: WCLoadingView(label: '목장 기도제목을 불러오는 중', compact: true),
       ),
-      error: (_, __) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Text(
-            '기도제목을 불러올 수 없습니다.',
-            style: TextStyle(fontSize: 13, color: wc.textTer),
-          ),
+      error: (_, __) => const SliverToBoxAdapter(
+        child: WCStateView(
+          icon: FluentIcons.error_circle_24_regular,
+          title: '기도제목을 불러올 수 없습니다',
+          compact: true,
         ),
       ),
       data: (items) {
         if (items.isEmpty) {
-          return SliverToBoxAdapter(
-            child: Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-                decoration: BoxDecoration(
-                  color: wc.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: wc.border),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '아직 올라온 기도제목이 없어요',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: wc.text,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '목장원들과 기도 제목을 나눠보세요 🙏',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: wc.textTer,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          return const SliverToBoxAdapter(
+            child: WCStateView(
+              icon: FluentIcons.hand_left_24_regular,
+              title: '아직 올라온 기도제목이 없어요',
+              message: '목장원들과 기도 제목을 나눠보세요.',
+              compact: true,
             ),
           );
         }
         return SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: WCSpacing.pageX),
           sliver: SliverList.separated(
             itemCount: items.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (_, __) => const SizedBox(height: WCSpacing.xs),
             itemBuilder: (context, i) => _GroupPrayerCard(item: items[i]),
           ),
         );
@@ -691,7 +662,7 @@ class _GroupPrayerCard extends StatelessWidget {
 
     return WCCard(
       anon: item.isAnonymous,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      density: WCCardDensity.compact,
       onTap: () {
         Haptic.selection();
         context.push(AppRoutes.prayerDetail(item.prayerId));
@@ -713,11 +684,13 @@ class _GroupPrayerCard extends StatelessWidget {
                     letterSpacing: -0.3,
                   ),
                 ),
-              const SizedBox(width: 6),
-              Text(
-                '· $dateStr',
-                style: TextStyle(fontSize: 11.5, color: wc.textTer),
-              ),
+              if (dateStr.isNotEmpty) ...[
+                const SizedBox(width: WCSpacing.xs),
+                Text(
+                  dateStr,
+                  style: TextStyle(fontSize: 11.5, color: wc.textTer),
+                ),
+              ],
             ],
           ),
           const SizedBox(height: 8),
@@ -731,40 +704,6 @@ class _GroupPrayerCard extends StatelessWidget {
               height: 1.55,
               letterSpacing: -0.2,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ───────────────────────────────────────────────────────────
-// Error view
-// ───────────────────────────────────────────────────────────
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final wc = context.wc;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(FluentIcons.error_circle_24_regular,
-              size: 36, color: wc.textTer),
-          const SizedBox(height: 12),
-          Text(
-            '목장 정보를 불러올 수 없습니다.',
-            style: TextStyle(fontSize: 15, color: wc.textSec),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          TextButton(
-            onPressed: onRetry,
-            child: Text('다시 시도', style: TextStyle(color: wc.accent)),
           ),
         ],
       ),

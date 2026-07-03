@@ -25,24 +25,27 @@ Future<void> _clearKeychainOnReinstall() async {
 }
 
 void main() {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
 
-    await _clearKeychainOnReinstall();
+      await _clearKeychainOnReinstall();
 
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-    };
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+      };
 
-    PlatformDispatcher.instance.onError = (error, stack) {
-      debugPrint('Unhandled platform error: $error\n$stack');
-      return true;
-    };
+      PlatformDispatcher.instance.onError = (error, stack) {
+        debugPrint('Unhandled platform error: $error\n$stack');
+        return true;
+      };
 
-    runApp(const AppRoot());
-  }, (error, stack) {
-    debugPrint('Unhandled zone error: $error\n$stack');
-  });
+      runApp(const AppRoot());
+    },
+    (error, stack) {
+      debugPrint('Unhandled zone error: $error\n$stack');
+    },
+  );
 }
 
 /// Root widget that rebuilds ProviderScope on logout to clear all cached state.

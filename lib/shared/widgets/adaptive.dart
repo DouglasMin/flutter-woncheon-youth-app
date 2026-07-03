@@ -47,9 +47,7 @@ class AdaptiveButton extends StatelessWidget {
       onPressed: onPressed,
       style: FilledButton.styleFrom(
         minimumSize: const Size.fromHeight(52),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       child: content,
     );
@@ -113,11 +111,11 @@ class AdaptiveTextField extends StatelessWidget {
       focusNode: focusNode,
       decoration: InputDecoration(
         labelText: placeholder,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -136,8 +134,7 @@ extension DarkModeColors on BuildContext {
       isDark ? AppColors.darkTextSecondary : AppColors.textSecondary;
   Color get textTertiary =>
       isDark ? AppColors.darkTextTertiary : AppColors.textTertiary;
-  Color get dividerColor =>
-      isDark ? AppColors.darkDivider : AppColors.divider;
+  Color get dividerColor => isDark ? AppColors.darkDivider : AppColors.divider;
 }
 
 /// Haptic helper

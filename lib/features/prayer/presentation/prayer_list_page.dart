@@ -1,5 +1,4 @@
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -50,40 +49,45 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
     final state = ref.watch(prayerListProvider);
     final readIds = ref.watch(readPrayerIdsProvider).valueOrNull ?? {};
 
-    final unread = state.valueOrNull?.items
+    final unread =
+        state.valueOrNull?.items
             .where((p) => !readIds.contains(p.prayerId))
             .length ??
         0;
 
     final listContent = state.when(
-      loading: () => Center(
-        child: isIOS
-            ? const CupertinoActivityIndicator(radius: 14)
-            : const CircularProgressIndicator(),
-      ),
-      error: (_, __) => _ListErrorView(
-        onRetry: () => ref.read(prayerListProvider.notifier).refresh(),
+      loading: () => const WCLoadingView(label: '기도제목을 불러오는 중'),
+      error: (_, __) => WCStateView(
+        icon: FluentIcons.error_circle_24_regular,
+        title: '기도제목을 불러올 수 없습니다',
+        message: '네트워크 상태를 확인한 뒤 다시 시도해주세요.',
+        actionLabel: '다시 시도',
+        onAction: () => ref.read(prayerListProvider.notifier).refresh(),
       ),
       data: (data) {
-        if (data.items.isEmpty) return const _ListEmptyView();
+        if (data.items.isEmpty) {
+          return const WCStateView(
+            icon: FluentIcons.hand_left_24_regular,
+            title: '아직 올라온 기도가 없어요',
+            message: '첫 번째 기도제목을 나눠주세요.',
+          );
+        }
         return RefreshIndicator(
           onRefresh: () => ref.read(prayerListProvider.notifier).refresh(),
           color: wc.accent,
           child: ListView.separated(
             controller: _scrollController,
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 120),
+            padding: const EdgeInsets.fromLTRB(
+              WCSpacing.pageX,
+              0,
+              WCSpacing.pageX,
+              WCSpacing.bottomNavClearance,
+            ),
             itemCount: data.items.length + (data.isLoadingMore ? 1 : 0),
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            separatorBuilder: (_, __) => const SizedBox(height: WCSpacing.xs),
             itemBuilder: (context, index) {
               if (index == data.items.length) {
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: isIOS
-                        ? const CupertinoActivityIndicator()
-                        : const CircularProgressIndicator(),
-                  ),
-                );
+                return const WCLoadingView(compact: true);
               }
               final item = data.items[index];
               final date = DateTime.tryParse(item.createdAt);
@@ -112,55 +116,39 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        '중보기도',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.w700,
-                          color: wc.text,
-                          letterSpacing: -0.7,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      if (unread > 0)
-                        Padding(
+                WCHeader(
+                  title: '중보기도',
+                  subtitle: '함께 기도해요',
+                  trailing: unread > 0
+                      ? Padding(
                           padding: const EdgeInsets.only(bottom: 4),
                           child: Text(
-                            '· 새 글 $unread',
+                            '새 글 $unread',
                             style: TextStyle(
                               fontSize: 13,
                               color: wc.accent,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-                  child: Text(
-                    '함께 기도해요',
-                    style: TextStyle(fontSize: 13, color: wc.textTer),
+                        )
+                      : null,
+                  padding: const EdgeInsets.fromLTRB(
+                    WCSpacing.pageX,
+                    WCSpacing.xl,
+                    WCSpacing.pageX,
+                    WCSpacing.sm,
                   ),
                 ),
                 const PrayerFilterBar(),
-                const SizedBox(height: 8),
+                const SizedBox(height: WCSpacing.xs),
                 Expanded(child: listContent),
               ],
             ),
           ),
           Positioned(
-            right: 20,
-            bottom: 28 + MediaQuery.of(context).padding.bottom,
-            child: _ComposeFab(
-              onPressed: _openCompose,
-            ),
+            right: WCSpacing.pageX,
+            bottom: WCSpacing.xl + MediaQuery.of(context).padding.bottom,
+            child: _ComposeFab(onPressed: _openCompose),
           ),
         ],
       ),
@@ -184,99 +172,21 @@ class _ComposeFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wc = context.wc;
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: wc.text,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 24,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Icon(
-          FluentIcons.edit_24_regular,
-          size: 24,
-          color: wc.bg,
-        ),
-      ),
-    );
-  }
-}
-
-class _ListErrorView extends StatelessWidget {
-  const _ListErrorView({required this.onRetry});
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final wc = context.wc;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            FluentIcons.error_circle_24_regular,
-            size: 36,
-            color: wc.textTer,
+    return Semantics(
+      button: true,
+      label: '기도 작성',
+      child: Material(
+        color: wc.text,
+        shape: const CircleBorder(),
+        shadowColor: Colors.black.withValues(alpha: 0.18),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Icon(FluentIcons.edit_24_regular, size: 24, color: wc.bg),
           ),
-          const SizedBox(height: 12),
-          Text(
-            '오류가 발생했습니다',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-              color: wc.text,
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: onRetry,
-            child: Text(
-              '다시 시도',
-              style: TextStyle(color: wc.accent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ListEmptyView extends StatelessWidget {
-  const _ListEmptyView();
-
-  @override
-  Widget build(BuildContext context) {
-    final wc = context.wc;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 80),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('🕊️', style: TextStyle(fontSize: 40)),
-            const SizedBox(height: 12),
-            Text(
-              '아직 올라온 기도가 없어요',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: wc.text,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '첫 번째로 나눠주세요',
-              style: TextStyle(fontSize: 13, color: wc.textTer),
-            ),
-          ],
         ),
       ),
     );
@@ -308,7 +218,7 @@ class _PrayerCard extends StatelessWidget {
     return WCCard(
       anon: isAnonymous,
       onTap: onTap,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      density: WCCardDensity.compact,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -326,24 +236,26 @@ class _PrayerCard extends StatelessWidget {
                     letterSpacing: -0.3,
                   ),
                 ),
-              const SizedBox(width: 6),
-              Text(
-                '· $dateStr',
-                style: TextStyle(fontSize: 11.5, color: wc.textTer),
-              ),
+              if (dateStr.isNotEmpty) ...[
+                const SizedBox(width: WCSpacing.xs),
+                Text(
+                  dateStr,
+                  style: TextStyle(fontSize: 11.5, color: wc.textTer),
+                ),
+              ],
               const Spacer(),
               if (!isRead) const UnreadDot(),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: WCSpacing.xs),
           Text(
             contentPreview,
-            maxLines: 3,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 14.5,
+              fontSize: 14,
               color: isAnonymous ? wc.anonText : wc.textSec,
-              height: 1.6,
+              height: 1.5,
               letterSpacing: -0.2,
             ),
           ),

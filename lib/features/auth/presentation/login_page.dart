@@ -116,10 +116,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         const SizedBox(height: 4),
                         Text(
                           '함께 기도하고, 함께 성장해요',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: wc.textSec,
-                          ),
+                          style: TextStyle(fontSize: 13, color: wc.textSec),
                         ),
                         const SizedBox(height: 42),
                         _field(
@@ -144,10 +141,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             alignment: Alignment.centerLeft,
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: wc.danger,
-                              ),
+                              style: TextStyle(fontSize: 13, color: wc.danger),
                             ),
                           ),
                         ],
@@ -220,8 +214,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         filled: true,
         fillColor: wc.surface,
         hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: wc.border),

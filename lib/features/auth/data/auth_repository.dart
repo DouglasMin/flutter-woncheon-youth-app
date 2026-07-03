@@ -60,10 +60,7 @@ class AuthRepository {
   }) async {
     await _apiClient.dio.post<Map<String, dynamic>>(
       Endpoints.changePassword,
-      data: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      },
+      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
     );
     // 비번 변경 성공 시점에 초기 비번 플래그 해제. 이후 재실행해도
     // splash가 home으로 보내줌.

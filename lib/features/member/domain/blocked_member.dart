@@ -8,14 +8,14 @@ class BlockedMember {
   final String memberName;
 
   factory BlockedMember.fromJson(Map<String, dynamic> json) => BlockedMember(
-        memberId: json['memberId']?.toString() ?? '',
-        memberName: json['memberName']?.toString() ?? '',
-      );
+    memberId: json['memberId']?.toString() ?? '',
+    memberName: json['memberName']?.toString() ?? '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'memberId': memberId,
-        'memberName': memberName,
-      };
+    'memberId': memberId,
+    'memberName': memberName,
+  };
 
   @override
   bool operator ==(Object other) =>

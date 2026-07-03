@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:fluentui_system_icons/fluentui_system_icons.dart';
 import 'package:flutter/material.dart';
@@ -49,8 +48,7 @@ const List<Map<String, String>> _verseData = [
   },
   {
     'short': '네 짐을 여호와께 맡겨 버리라 그가 너를 붙드시고',
-    'full':
-        '네 짐을 여호와께 맡겨 버리라 그가 너를 붙드시고 의인의 요동함을 영원히 허락하지 아니하시리로다',
+    'full': '네 짐을 여호와께 맡겨 버리라 그가 너를 붙드시고 의인의 요동함을 영원히 허락하지 아니하시리로다',
     'ref': '시편 55:22',
   },
   {
@@ -61,8 +59,7 @@ const List<Map<String, String>> _verseData = [
   },
   {
     'short': '네 마음을 다하여 여호와를 신뢰하고',
-    'full':
-        '네 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라 너는 범사에 그를 인정하라 그리하면 네 길을 지도하시리라',
+    'full': '네 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라 너는 범사에 그를 인정하라 그리하면 네 길을 지도하시리라',
     'ref': '잠언 3:5–6',
   },
   {
@@ -78,8 +75,7 @@ const List<Map<String, String>> _verseData = [
   },
   {
     'short': '너는 청년의 때에 너의 창조주를 기억하라',
-    'full':
-        '너는 청년의 때 곧 곤고한 날이 이르기 전, 나는 아무 낙이 없다고 할 해가 가까이 오기 전에 너의 창조주를 기억하라',
+    'full': '너는 청년의 때 곧 곤고한 날이 이르기 전, 나는 아무 낙이 없다고 할 해가 가까이 오기 전에 너의 창조주를 기억하라',
     'ref': '전도서 12:1',
   },
   {
@@ -114,8 +110,7 @@ class _HomePageState extends ConsumerState<HomePage> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    final dayOfYear =
-        now.difference(DateTime(now.year)).inDays;
+    final dayOfYear = now.difference(DateTime(now.year)).inDays;
     _verseIdx = dayOfYear % _verseData.length;
   }
 
@@ -135,17 +130,14 @@ class _HomePageState extends ConsumerState<HomePage> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => _VerseSheet(
-        verse: _verseData[_verseIdx],
-      ),
+      builder: (ctx) => _VerseSheet(verse: _verseData[_verseIdx]),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final wc = context.wc;
-    final memberName =
-        ref.watch(_memberNameProvider).valueOrNull ?? '청년부원';
+    final memberName = ref.watch(_memberNameProvider).valueOrNull ?? '청년부원';
     final now = DateTime.now();
     final dateLabel =
         '${now.year}년 ${now.month}월 ${now.day}일 (${koreanWeekday(now)})';
@@ -153,150 +145,127 @@ class _HomePageState extends ConsumerState<HomePage> {
     final greet = hour < 12
         ? '좋은 아침이에요'
         : hour < 18
-            ? '평안한 오후예요'
-            : '평안한 저녁이에요';
+        ? '평안한 오후예요'
+        : '평안한 저녁이에요';
     final verse = _verseData[_verseIdx];
     final isSunday = now.weekday == DateTime.sunday;
 
-    return Scaffold(
-      backgroundColor: wc.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return WCPageScaffold(
+      header: WCHeader(
+        eyebrow: dateLabel,
+        title: '$memberName님, $greet',
+        titleWidget: RichText(
+          text: TextSpan(
             children: [
-              // Greeting
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      dateLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: wc.textTer,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: '$memberName님,\n',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w700,
-                              color: wc.text,
-                              letterSpacing: -0.6,
-                              height: 1.3,
-                              fontFamily: AppTheme.pretendard,
-                            ),
-                          ),
-                          TextSpan(
-                            text: greet,
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w500,
-                              color: wc.textSec,
-                              letterSpacing: -0.6,
-                              height: 1.3,
-                              fontFamily: AppTheme.pretendard,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+              TextSpan(
+                text: '$memberName님,\n',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w700,
+                  color: wc.text,
+                  letterSpacing: -0.6,
+                  height: 1.3,
+                  fontFamily: AppTheme.pretendard,
                 ),
               ),
-              // Verse hero card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: _VerseHero(
-                  verse: verse,
-                  onShuffle: _shuffle,
-                  onTap: _openVerseSheet,
+              TextSpan(
+                text: greet,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w500,
+                  color: wc.textSec,
+                  letterSpacing: -0.6,
+                  height: 1.3,
+                  fontFamily: AppTheme.pretendard,
                 ),
               ),
-              const SizedBox(height: 12),
-              // Quick actions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _QuickTile(
-                        icon: FluentIcons.hand_left_24_regular,
-                        title: '기도 나누기',
-                        subtitle: '함께 기도해요',
-                        accent: false,
-                        onTap: () {
-                          Haptic.light();
-                          context.go(AppRoutes.prayerList);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _QuickTile(
-                        icon: FluentIcons.people_24_regular,
-                        title: '우리 목장',
-                        subtitle: isSunday ? '오늘 주일이에요' : '목장원과 기도해요',
-                        accent: isSunday,
-                        onTap: () {
-                          Haptic.light();
-                          context.go(AppRoutes.attendanceCheck);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Coming soon
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Text(
-                  '준비 중',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: wc.textSec,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: const [
-                    Expanded(
-                      child: _DisabledTile(label: '송 리스트', desc: '예배 찬양 모음'),
-                    ),
-                    SizedBox(width: 10),
-                    Expanded(
-                      child: _DisabledTile(label: '공지사항', desc: '청년부 소식'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 120),
             ],
           ),
         ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          VerseHeroCard(
+            verse: verse,
+            onShuffle: _shuffle,
+            onTap: _openVerseSheet,
+          ),
+          const SizedBox(height: WCSpacing.sm),
+          // Quick actions
+          Row(
+            children: [
+              Expanded(
+                child: WCActionTile(
+                  icon: FluentIcons.hand_left_24_regular,
+                  title: '기도 나누기',
+                  subtitle: '함께 기도해요',
+                  onTap: () {
+                    Haptic.light();
+                    context.go(AppRoutes.prayerList);
+                  },
+                ),
+              ),
+              const SizedBox(width: WCSpacing.sm),
+              Expanded(
+                child: WCActionTile(
+                  icon: FluentIcons.people_24_regular,
+                  title: '우리 목장',
+                  subtitle: isSunday ? '오늘 주일이에요' : '목장원과 기도해요',
+                  accent: isSunday,
+                  onTap: () {
+                    Haptic.light();
+                    context.go(AppRoutes.attendanceCheck);
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: WCSpacing.sectionGap),
+          // Coming soon
+          Text(
+            '준비 중',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: wc.textSec,
+              letterSpacing: 0.5,
+            ),
+          ),
+          const SizedBox(height: WCSpacing.xs),
+          const Row(
+            children: [
+              Expanded(
+                child: WCActionTile(
+                  icon: FluentIcons.music_note_2_24_regular,
+                  title: '송 리스트',
+                  subtitle: '예배 찬양 모음',
+                  disabled: true,
+                ),
+              ),
+              SizedBox(width: WCSpacing.sm),
+              Expanded(
+                child: WCActionTile(
+                  icon: FluentIcons.megaphone_24_regular,
+                  title: '공지사항',
+                  subtitle: '청년부 소식',
+                  disabled: true,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
-class _VerseHero extends StatelessWidget {
-  const _VerseHero({
+class VerseHeroCard extends StatelessWidget {
+  const VerseHeroCard({
     required this.verse,
     required this.onShuffle,
     required this.onTap,
+    super.key,
   });
 
   final Map<String, String> verse;
@@ -305,70 +274,60 @@ class _VerseHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(22),
-          child: SizedBox(
-            height: 230,
+    final ref = verse['ref'] ?? '';
+    return Semantics(
+      button: true,
+      label: ref.isEmpty ? '오늘의 말씀 카드' : '오늘의 말씀 카드, $ref',
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(WCRadius.sheet),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: AspectRatio(
+            aspectRatio: 1.38,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 Image.asset(
                   'assets/images/praying-image-black.jpg',
                   fit: BoxFit.cover,
-                  alignment: const Alignment(0, -0.4),
+                  alignment: const Alignment(0, -0.2),
                 ),
-                DecoratedBox(
+                const DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
-                      stops: const [0, 0.45, 1],
+                      stops: [0, 0.48, 1],
                       colors: [
-                        Colors.black.withValues(alpha: 0.15),
-                        Colors.black.withValues(alpha: 0.55),
-                        Colors.black.withValues(alpha: 0.92),
+                        Color(0x33000000),
+                        Color(0x66000000),
+                        Color(0xE6000000),
+                      ],
+                    ),
+                  ),
+                ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.black.withValues(alpha: 0.36),
+                        Colors.transparent,
                       ],
                     ),
                   ),
                 ),
                 Positioned(
-                  top: 18,
-                  left: 18,
-                  right: 18,
+                  top: WCSpacing.md,
+                  left: WCSpacing.md,
+                  right: WCSpacing.md,
                   child: Row(
                     children: [
-                      _GlassChip(
-                        leading: Container(
-                          width: 6,
-                          height: 6,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.white70,
-                                blurRadius: 8,
-                              ),
-                            ],
-                          ),
-                        ),
-                        child: const Text(
-                          '오늘의 말씀',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.6,
-                          ),
-                        ),
-                      ),
+                      const _HeroBadge(text: '오늘의 말씀'),
                       const Spacer(),
-                      _GlassIconBtn(
+                      _HeroIconButton(
+                        tooltip: '말씀 바꾸기',
                         icon: FluentIcons.arrow_shuffle_24_regular,
                         onTap: onShuffle,
                       ),
@@ -376,59 +335,49 @@ class _VerseHero extends StatelessWidget {
                   ),
                 ),
                 Positioned(
-                  left: 22,
-                  right: 22,
-                  bottom: 20,
+                  left: WCSpacing.lg,
+                  right: WCSpacing.lg,
+                  bottom: WCSpacing.lg,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
                         '"${verse['short']}"',
-                        maxLines: 2,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 19,
-                          fontWeight: FontWeight.w600,
-                          height: 1.5,
-                          letterSpacing: -0.4,
-                          fontFamily: 'Noto Serif KR',
-                          shadows: [
+                          fontSize: 21,
+                          fontWeight: FontWeight.w700,
+                          height: 1.45,
+                          fontFamily: AppTheme.pretendard,
+                          shadows: const [
                             Shadow(
-                              blurRadius: 16,
+                              blurRadius: 18,
                               color: Colors.black54,
-                              offset: Offset(0, 2),
+                              offset: Offset(0, 3),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: WCSpacing.md),
                       Row(
                         children: [
-                          Text(
-                            verse['ref'] ?? '',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.3,
+                          Expanded(
+                            child: Text(
+                              ref,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                          const Spacer(),
-                          const Text(
-                            '전체 보기',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const Icon(
-                            FluentIcons.chevron_right_24_regular,
-                            size: 14,
-                            color: Colors.white70,
-                          ),
+                          const SizedBox(width: WCSpacing.sm),
+                          const _HeroCta(),
                         ],
                       ),
                     ],
@@ -443,33 +392,72 @@ class _VerseHero extends StatelessWidget {
   }
 }
 
-class _GlassChip extends StatelessWidget {
-  const _GlassChip({required this.leading, required this.child});
-  final Widget leading;
-  final Widget child;
+class _HeroBadge extends StatelessWidget {
+  const _HeroBadge({required this.text});
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(999),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(9, 6, 11, 6),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.18),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(WCRadius.pill),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(10, 7, 12, 7),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                boxShadow: [BoxShadow(color: Colors.white70, blurRadius: 8)],
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              leading,
-              const SizedBox(width: 7),
-              child,
-            ],
+            const SizedBox(width: WCSpacing.xs),
+            Text(
+              text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroIconButton extends StatelessWidget {
+  const _HeroIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onTap,
+  });
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.white.withValues(alpha: 0.16),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onTap,
+          child: SizedBox(
+            width: 38,
+            height: 38,
+            child: Icon(icon, size: 18, color: Colors.white),
           ),
         ),
       ),
@@ -477,31 +465,36 @@ class _GlassChip extends StatelessWidget {
   }
 }
 
-class _GlassIconBtn extends StatelessWidget {
-  const _GlassIconBtn({required this.icon, required this.onTap});
-  final IconData icon;
-  final VoidCallback onTap;
+class _HeroCta extends StatelessWidget {
+  const _HeroCta();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(999),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.18),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(WCRadius.pill),
+      ),
+      child: const Padding(
+        padding: EdgeInsets.fromLTRB(12, 8, 10, 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '말씀 열기',
+              style: TextStyle(
+                color: Colors.black,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
               ),
             ),
-            child: Icon(icon, size: 16, color: Colors.white),
-          ),
+            SizedBox(width: WCSpacing.xxs),
+            Icon(
+              FluentIcons.chevron_right_24_regular,
+              size: 14,
+              color: Colors.black,
+            ),
+          ],
         ),
       ),
     );
@@ -559,7 +552,7 @@ class _VerseSheet extends StatelessWidget {
               color: wc.text,
               letterSpacing: -0.3,
               height: 1.7,
-              fontFamily: 'Noto Serif KR',
+              fontFamily: AppTheme.pretendard,
             ),
           ),
           const SizedBox(height: 14),
@@ -578,13 +571,15 @@ class _VerseSheet extends StatelessWidget {
                 child: WCButton(
                   tone: WCButtonTone.soft,
                   onPressed: () async {
-                    await Clipboard.setData(ClipboardData(
-                      text: '"${verse['full']}" — ${verse['ref']}',
-                    ));
+                    await Clipboard.setData(
+                      ClipboardData(
+                        text: '"${verse['full']}" — ${verse['ref']}',
+                      ),
+                    );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('복사되었어요')),
-                      );
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(const SnackBar(content: Text('복사되었어요')));
                     }
                   },
                   child: const Text('복사'),
@@ -600,128 +595,6 @@ class _VerseSheet extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _QuickTile extends StatelessWidget {
-  const _QuickTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool accent;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final wc = context.wc;
-    return Material(
-      color: wc.surface,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Container(
-          height: 116,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: wc.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: wc.surfaceAlt,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, size: 20, color: wc.text),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      color: wc.text,
-                      letterSpacing: -0.3,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: accent ? FontWeight.w600 : FontWeight.w400,
-                      color: accent ? wc.accent : wc.textTer,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DisabledTile extends StatelessWidget {
-  const _DisabledTile({required this.label, required this.desc});
-  final String label;
-  final String desc;
-
-  @override
-  Widget build(BuildContext context) {
-    final wc = context.wc;
-    return Opacity(
-      opacity: 0.6,
-      child: Container(
-        height: 88,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: wc.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: wc.border),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: wc.textSec,
-                letterSpacing: -0.3,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              desc,
-              style: TextStyle(
-                fontSize: 11.5,
-                color: wc.textTer,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

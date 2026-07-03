@@ -47,8 +47,11 @@ class PrayerDetailPage extends ConsumerWidget {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: Icon(FluentIcons.chevron_left_24_regular,
-                        color: wc.text, size: 24),
+                    icon: Icon(
+                      FluentIcons.chevron_left_24_regular,
+                      color: wc.text,
+                      size: 24,
+                    ),
                   ),
                   Expanded(
                     child: Text(
@@ -73,8 +76,7 @@ class PrayerDetailPage extends ConsumerWidget {
                       : const CircularProgressIndicator(),
                 ),
                 error: (_, __) => _ErrorView(
-                  onRetry: () =>
-                      ref.invalidate(prayerDetailProvider(prayerId)),
+                  onRetry: () => ref.invalidate(prayerDetailProvider(prayerId)),
                 ),
                 data: (prayer) {
                   final date = DateTime.tryParse(prayer.createdAt);
@@ -90,7 +92,10 @@ class PrayerDetailPage extends ConsumerWidget {
                           trailing: prayer.isMine
                               ? IconButton(
                                   onPressed: () => _confirmDelete(
-                                      context, ref, prayer.prayerId),
+                                    context,
+                                    ref,
+                                    prayer.prayerId,
+                                  ),
                                   icon: Icon(
                                     FluentIcons.delete_24_regular,
                                     color: wc.danger,
@@ -180,15 +185,12 @@ class _AuthorMeta extends StatelessWidget {
       decoration: BoxDecoration(
         color: isAnonymous ? wc.anon : wc.surfaceAlt,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isAnonymous ? wc.anonBorder : wc.border,
-        ),
+        border: Border.all(color: isAnonymous ? wc.anonBorder : wc.border),
       ),
       child: Row(
         children: [
           if (isAnonymous)
-            Icon(FluentIcons.eye_off_16_regular,
-                size: 20, color: wc.anonText)
+            Icon(FluentIcons.eye_off_16_regular, size: 20, color: wc.anonText)
           else
             Container(
               width: 8,
@@ -269,8 +271,11 @@ class _ErrorView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(FluentIcons.error_circle_24_regular,
-              size: 36, color: wc.textTer),
+          Icon(
+            FluentIcons.error_circle_24_regular,
+            size: 36,
+            color: wc.textTer,
+          ),
           const SizedBox(height: 12),
           Text(
             '오류가 발생했습니다',
@@ -312,8 +317,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
   }
 
   Future<void> _loadMemberId() async {
-    final id =
-        await ref.read(secureStorageServiceProvider).getMemberId();
+    final id = await ref.read(secureStorageServiceProvider).getMemberId();
     if (mounted) setState(() => _currentMemberId = id);
   }
 
@@ -329,10 +333,9 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     setState(() => _isSending = true);
     await Haptic.light();
     try {
-      await ref.read(prayerRepositoryProvider).createComment(
-            prayerId: widget.prayerId,
-            content: content,
-          );
+      await ref
+          .read(prayerRepositoryProvider)
+          .createComment(prayerId: widget.prayerId, content: content);
       _controller.clear();
       if (mounted) ref.invalidate(commentsProvider(widget.prayerId));
     } on DioException {
@@ -372,7 +375,9 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     editController.dispose();
     if (newContent == null || newContent.trim().isEmpty || !mounted) return;
     try {
-      await ref.read(prayerRepositoryProvider).updateComment(
+      await ref
+          .read(prayerRepositoryProvider)
+          .updateComment(
             prayerId: widget.prayerId,
             commentId: comment.commentId,
             content: newContent.trim(),
@@ -394,7 +399,9 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
     );
     if (confirmed != true || !mounted) return;
     try {
-      await ref.read(prayerRepositoryProvider).deleteComment(
+      await ref
+          .read(prayerRepositoryProvider)
+          .deleteComment(
             prayerId: widget.prayerId,
             commentId: comment.commentId,
           );
@@ -450,10 +457,11 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                 },
               ),
               ListTile(
-                leading: Icon(FluentIcons.delete_24_regular,
-                    color: context.wc.danger),
-                title: Text('삭제',
-                    style: TextStyle(color: context.wc.danger)),
+                leading: Icon(
+                  FluentIcons.delete_24_regular,
+                  color: context.wc.danger,
+                ),
+                title: Text('삭제', style: TextStyle(color: context.wc.danger)),
                 onTap: () {
                   Navigator.of(ctx).pop();
                   _deleteComment(comment);
@@ -567,7 +575,8 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
                 for (final c in comments) ...[
                   _CommentTile(
                     comment: c,
-                    isMine: _currentMemberId != null &&
+                    isMine:
+                        _currentMemberId != null &&
                         c.memberId == _currentMemberId,
                     onLongPress: () => _showActions(c),
                   ),
@@ -635,11 +644,7 @@ class _CommentTile extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               comment.content,
-              style: TextStyle(
-                fontSize: 14,
-                color: wc.textSec,
-                height: 1.55,
-              ),
+              style: TextStyle(fontSize: 14, color: wc.textSec, height: 1.55),
             ),
           ],
         ),
@@ -707,10 +712,7 @@ class _OtherUserMenu extends ConsumerWidget {
                   color: wc.danger,
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  '이 사용자 차단',
-                  style: TextStyle(color: wc.danger),
-                ),
+                Text('이 사용자 차단', style: TextStyle(color: wc.danger)),
               ],
             ),
           ),
@@ -724,7 +726,8 @@ class _OtherUserMenu extends ConsumerWidget {
     final confirmed = await showAdaptiveConfirmDialog(
       context,
       title: '$authorName 님 차단',
-      content: '이 사용자의 기도/댓글이 더 이상 보이지 않습니다.\n'
+      content:
+          '이 사용자의 기도/댓글이 더 이상 보이지 않습니다.\n'
           '설정 > 차단 관리에서 해제할 수 있습니다.',
       confirmText: '차단',
       isDestructive: true,
@@ -732,22 +735,20 @@ class _OtherUserMenu extends ConsumerWidget {
     if (confirmed != true || !context.mounted) return;
 
     try {
-      await ref
-          .read(blocklistProvider.notifier)
-          .block(authorMemberId!);
+      await ref.read(blocklistProvider.notifier).block(authorMemberId!);
       if (!context.mounted) return;
       // 기도 목록/상세 캐시 갱신 — 차단한 사용자 글이 즉시 사라지도록
       ref.invalidate(prayerListProvider);
       ref.invalidate(commentsProvider(prayerId));
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$authorName 님을 차단했습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$authorName 님을 차단했습니다.')));
     } on DioException {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('차단에 실패했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('차단에 실패했습니다.')));
       }
     }
   }
@@ -768,8 +769,8 @@ void _showErrorMessage(BuildContext context, String message) {
       ),
     );
   } else {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
