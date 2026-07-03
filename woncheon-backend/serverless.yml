@@ -39,6 +39,16 @@ provider:
             - sns:Publish
             - sns:CreatePlatformEndpoint
           Resource: "*"
+        - Effect: Allow
+          Action:
+            - dynamodb:DescribeStream
+            - dynamodb:GetRecords
+            - dynamodb:GetShardIterator
+            - dynamodb:ListStreams
+          Resource:
+            - Fn::GetAtt:
+                - WoncheonTable
+                - StreamArn
 
 build:
   esbuild:
@@ -244,6 +254,19 @@ functions:
             resultTtlInSeconds: 0
             identitySource: method.request.header.Authorization
             type: request
+
+  sendNoticeNotification:
+    handler: src/functions/notice/sendNotification.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - WoncheonTable
+              - StreamArn
+          batchSize: 10
+          startingPosition: LATEST
+          maximumRetryAttempts: 0
 
   # ── Comments & Reactions ─────────────────────
   listComments:
@@ -476,3 +499,5 @@ resources:
         TimeToLiveSpecification:
           AttributeName: expiresAt
           Enabled: true
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
