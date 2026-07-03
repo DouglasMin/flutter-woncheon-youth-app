@@ -233,9 +233,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
           ),
           const SizedBox(height: WCSpacing.xs),
-          const Row(
+          Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: WCActionTile(
                   icon: FluentIcons.music_note_2_24_regular,
                   title: '송 리스트',
@@ -243,13 +243,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   disabled: true,
                 ),
               ),
-              SizedBox(width: WCSpacing.sm),
+              const SizedBox(width: WCSpacing.sm),
               Expanded(
                 child: WCActionTile(
                   icon: FluentIcons.megaphone_24_regular,
                   title: '공지사항',
                   subtitle: '청년부 소식',
-                  disabled: true,
+                  onTap: () {
+                    Haptic.light();
+                    context.push(AppRoutes.notices);
+                  },
                 ),
               ),
             ],
