@@ -30,8 +30,11 @@ class PrayerFilter {
         return now.subtract(const Duration(hours: 24));
       case PrayerFilterPreset.thisWeek:
         final weekday = now.weekday; // Mon=1, Sun=7
-        return DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: weekday - 1));
+        return DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: weekday - 1));
       case PrayerFilterPreset.oneMonth:
         return DateTime(now.year, now.month - 1, now.day);
       case PrayerFilterPreset.threeMonths:

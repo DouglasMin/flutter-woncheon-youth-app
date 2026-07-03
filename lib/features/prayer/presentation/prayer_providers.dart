@@ -11,13 +11,15 @@ final prayerRepositoryProvider = Provider<PrayerRepository>((ref) {
   return PrayerRepository(ref.watch(apiClientProvider));
 });
 
-final prayerFilterProvider =
-    StateProvider<PrayerFilter>((ref) => const PrayerFilter());
+final prayerFilterProvider = StateProvider<PrayerFilter>(
+  (ref) => const PrayerFilter(),
+);
 
 enum PrayerViewMode { list, card }
 
-final prayerViewModeProvider =
-    StateProvider<PrayerViewMode>((ref) => PrayerViewMode.list);
+final prayerViewModeProvider = StateProvider<PrayerViewMode>(
+  (ref) => PrayerViewMode.list,
+);
 
 final readPrayersStorageProvider = Provider<ReadPrayersStorage>((ref) {
   return ReadPrayersStorage();
@@ -30,17 +32,17 @@ final readPrayerIdsProvider = FutureProvider<Set<String>>((ref) async {
 });
 
 // Comments
-final commentsProvider =
-    FutureProvider.autoDispose.family<List<CommentItem>, String>((ref, prayerId) async {
-  final repo = ref.watch(prayerRepositoryProvider);
-  return repo.getComments(prayerId);
-});
+final commentsProvider = FutureProvider.autoDispose
+    .family<List<CommentItem>, String>((ref, prayerId) async {
+      final repo = ref.watch(prayerRepositoryProvider);
+      return repo.getComments(prayerId);
+    });
 
 // Reactions — loaded from server, cached locally
 final reactionProvider =
     AsyncNotifierProvider.family<ReactionNotifier, ReactionState, String>(
-  ReactionNotifier.new,
-);
+      ReactionNotifier.new,
+    );
 
 class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
   @override
@@ -57,16 +59,16 @@ class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
   }
 }
 
-final prayerDetailProvider =
-    FutureProvider.autoDispose.family<PrayerDetail, String>((ref, prayerId) async {
-  final repo = ref.watch(prayerRepositoryProvider);
-  return repo.getPrayer(prayerId);
-});
+final prayerDetailProvider = FutureProvider.autoDispose
+    .family<PrayerDetail, String>((ref, prayerId) async {
+      final repo = ref.watch(prayerRepositoryProvider);
+      return repo.getPrayer(prayerId);
+    });
 
 final prayerListProvider =
     AsyncNotifierProvider<PrayerListNotifier, PrayerListState>(
-  PrayerListNotifier.new,
-);
+      PrayerListNotifier.new,
+    );
 
 @immutable
 class PrayerListState {
@@ -107,12 +109,8 @@ class PrayerListState {
           listEquals(items, other.items);
 
   @override
-  int get hashCode => Object.hash(
-        hasMore,
-        isLoadingMore,
-        nextCursor,
-        Object.hashAll(items),
-      );
+  int get hashCode =>
+      Object.hash(hasMore, isLoadingMore, nextCursor, Object.hashAll(items));
 }
 
 class PrayerListNotifier extends AsyncNotifier<PrayerListState> {

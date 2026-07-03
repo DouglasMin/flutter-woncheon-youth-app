@@ -19,10 +19,19 @@ import 'package:woncheon_youth/core/update/version_compare.dart';
 abstract final class AppUpdateService {
   /// 개발 시 다이얼로그 UI 강제 표시.
   /// `flutter run --dart-define=FORCE_UPDATE=true`
-  static const _forceForTest =
-      bool.fromEnvironment('FORCE_UPDATE', defaultValue: false);
+  static const _forceForTest = bool.fromEnvironment(
+    'FORCE_UPDATE',
+    defaultValue: false,
+  );
 
   static const _bundleId = 'com.woncheon.woncheonYouth';
+
+  /// iTunes Lookup의 country 파라미터. 미지정 시 Apple 기본값은 US이고,
+  /// US store는 KR store보다 새 버전 반영이 느려서 한국 사용자에게
+  /// 업데이트 감지가 한 박자 늦게(또는 영영) 동작하는 버그가 있었다.
+  /// 청년부는 100% 한국 App Store 사용자라 kr 고정.
+  /// (공식 문서: country 미지정 시 "The default is US.")
+  static const _storeCountry = 'kr';
 
   /// 앱 시작 시 호출. 업데이트 필요하면 차단형 다이얼로그 또는 IMMEDIATE flow.
   /// 네트워크 실패 등 어떤 오류도 사용자 흐름을 막지 않는다 (silent fail).
@@ -73,6 +82,7 @@ abstract final class AppUpdateService {
       return;
     }
 
+    if (!context.mounted) return;
     await _showIosDialogIfMounted(
       context,
       latestVersion: lookup.version,
@@ -92,7 +102,7 @@ abstract final class AppUpdateService {
       );
       final res = await dio.get<dynamic>(
         'https://itunes.apple.com/lookup',
-        queryParameters: {'bundleId': _bundleId},
+        queryParameters: {'bundleId': _bundleId, 'country': _storeCountry},
       );
       final data = res.data is String
           ? jsonDecode(res.data as String) as Map<String, dynamic>

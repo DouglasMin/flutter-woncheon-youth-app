@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:woncheon_youth/core/push/push_token_registrar.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/core/update/app_update_service.dart';
@@ -26,9 +29,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
       vsync: this,
       duration: const Duration(milliseconds: 700),
     );
-    _scale = Tween<double>(begin: 0.92, end: 1).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
+    _scale = Tween<double>(
+      begin: 0.92,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _opacity = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
     _run();
   }
@@ -54,6 +58,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
     // 초기 비번 미변경 상태에서 앱 종료한 사용자는 다시 changePassword로.
     final isFirstLogin = await storage.getIsFirstLogin();
     if (!mounted) return;
+    if (!isFirstLogin) {
+      unawaited(registerDeviceTokenAfterAuth(ref));
+    }
     context.go(isFirstLogin ? AppRoutes.changePassword : AppRoutes.home);
   }
 

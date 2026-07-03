@@ -56,8 +56,7 @@ class BlocksPage extends ConsumerWidget {
             ),
             Expanded(
               child: asyncBlocks.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => Center(
                   child: Text(
                     '차단 목록을 불러올 수 없습니다.',
@@ -143,9 +142,7 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
 
     setState(() => _loading = true);
     try {
-      await ref
-          .read(blocklistProvider.notifier)
-          .unblock(member.memberId);
+      await ref.read(blocklistProvider.notifier).unblock(member.memberId);
       if (!mounted) return;
       ref.invalidate(prayerListProvider);
       // commentsProvider는 family — 어느 prayer detail이 열릴지 모르니 family 전체 무효화
@@ -155,9 +152,9 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
       );
     } on DioException {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('차단 해제에 실패했습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('차단 해제에 실패했습니다.')));
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -223,8 +220,7 @@ class _BlockedRowState extends ConsumerState<_BlockedRow> {
                   )
                 : const Text(
                     '해제',
-                    style:
-                        TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                   ),
           ),
         ],

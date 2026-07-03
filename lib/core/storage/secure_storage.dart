@@ -25,8 +25,7 @@ class SecureStorageService {
       _storage.write(key: AppConstants.refreshTokenKey, value: token);
 
   // Member Info
-  Future<String?> getMemberId() =>
-      _storage.read(key: AppConstants.memberIdKey);
+  Future<String?> getMemberId() => _storage.read(key: AppConstants.memberIdKey);
 
   Future<void> setMemberId(String id) =>
       _storage.write(key: AppConstants.memberIdKey, value: id);
@@ -47,9 +46,9 @@ class SecureStorageService {
   }
 
   Future<void> setIsFirstLogin({required bool value}) => _storage.write(
-        key: AppConstants.isFirstLoginKey,
-        value: value ? 'true' : 'false',
-      );
+    key: AppConstants.isFirstLoginKey,
+    value: value ? 'true' : 'false',
+  );
 
   // Tokens
   Future<void> saveTokens({
@@ -84,10 +83,7 @@ class SecureStorageService {
 
   Future<void> setBlockedMembers(List<BlockedMember> members) async {
     final encoded = jsonEncode(members.map((m) => m.toJson()).toList());
-    await _storage.write(
-      key: AppConstants.blockedMembersKey,
-      value: encoded,
-    );
+    await _storage.write(key: AppConstants.blockedMembersKey, value: encoded);
   }
 
   Future<void> clearAll() => _storage.deleteAll();

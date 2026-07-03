@@ -18,8 +18,7 @@ final selectedDateProvider = StateProvider<String>((ref) {
 });
 
 // 주간 출결 종합 (리더/멤버 공통)
-final weeklyAttendanceProvider =
-    FutureProvider<WeeklyAttendance>((ref) async {
+final weeklyAttendanceProvider = FutureProvider<WeeklyAttendance>((ref) async {
   final repo = ref.watch(attendanceRepositoryProvider);
   final date = ref.watch(selectedDateProvider);
   return repo.getWeekly(date);
@@ -31,8 +30,7 @@ final weeklyAttendanceProvider =
 final groupPrayersProvider = FutureProvider<List<PrayerItem>>((ref) async {
   final weekly = await ref.watch(weeklyAttendanceProvider.future);
   final memberIds = <String>{
-    for (final m in weekly.members ?? const <GroupMember>[])
-      m.memberId,
+    for (final m in weekly.members ?? const <GroupMember>[]) m.memberId,
     // 리더가 본인 목장에서 쓴 기도도 포함되도록 leader도 추가
     // (leader_member_id는 group_members에 보통 있지만, 안전장치)
   }.toList();
@@ -40,16 +38,14 @@ final groupPrayersProvider = FutureProvider<List<PrayerItem>>((ref) async {
   if (memberIds.isEmpty) return const [];
 
   final repo = ref.watch(prayerRepositoryProvider);
-  final response = await repo.listPrayers(
-    limit: 30,
-    memberIds: memberIds,
-  );
+  final response = await repo.listPrayers(limit: 30, memberIds: memberIds);
   return response.items;
 });
 
 // 목장별 출석률 통계
-final attendanceStatsProvider =
-    FutureProvider.family<List<GroupStats>, String>((ref, period) async {
-  final repo = ref.watch(attendanceRepositoryProvider);
-  return repo.getStats(period: period);
-});
+final attendanceStatsProvider = FutureProvider.family<List<GroupStats>, String>(
+  (ref, period) async {
+    final repo = ref.watch(attendanceRepositoryProvider);
+    return repo.getStats(period: period);
+  },
+);

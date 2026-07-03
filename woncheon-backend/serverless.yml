@@ -376,6 +376,14 @@ functions:
             identitySource: method.request.header.Authorization
             type: request
 
+  dbHeartbeat:
+    handler: src/functions/health/dbHeartbeat.handler
+    events:
+      # 매일 오전 10시 KST (= 01:00 UTC)
+      - schedule:
+          rate: cron(0 1 * * ? *)
+          enabled: true
+
 resources:
   Resources:
     WoncheonTable:

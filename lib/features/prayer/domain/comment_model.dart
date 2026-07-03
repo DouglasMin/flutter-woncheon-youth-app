@@ -19,10 +19,8 @@ class CommentItem with _$CommentItem {
 
 @freezed
 class ReactionState with _$ReactionState {
-  const factory ReactionState({
-    required bool reacted,
-    required int count,
-  }) = _ReactionState;
+  const factory ReactionState({required bool reacted, required int count}) =
+      _ReactionState;
 
   factory ReactionState.fromJson(Map<String, dynamic> json) =>
       _$ReactionStateFromJson(json);

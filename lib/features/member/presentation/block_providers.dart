@@ -15,8 +15,8 @@ final blockRepositoryProvider = Provider<BlockRepository>((ref) {
 /// - 동시 호출 방지: 단일 `_inflight` lock으로 직렬화.
 final blocklistProvider =
     AsyncNotifierProvider<BlocklistNotifier, List<BlockedMember>>(
-  BlocklistNotifier.new,
-);
+      BlocklistNotifier.new,
+    );
 
 class BlocklistNotifier extends AsyncNotifier<List<BlockedMember>> {
   // 진행 중인 요청. 두 번째 요청은 앞 요청이 끝날 때까지 대기.

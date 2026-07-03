@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:woncheon_youth/core/api/api_error.dart';
 import 'package:woncheon_youth/core/api/auth_event_bus.dart';
@@ -13,6 +14,10 @@ import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/shared/providers/providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
 import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
+
+final _packageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
+});
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -37,8 +42,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _openPrivacyPolicy() async {
-    final uri =
-        Uri.parse('https://douglasmin.github.io/flutter-woncheon-youth-app/');
+    final uri = Uri.parse(
+      'https://douglasmin.github.io/flutter-woncheon-youth-app/',
+    );
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
@@ -46,15 +52,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final uri = Uri(
       scheme: 'mailto',
       path: 'dongik.dev73@gmail.com',
-      queryParameters: {
-        'subject': '[원천청년부 앱] 문의',
-      },
+      queryParameters: {'subject': '[원천청년부 앱] 문의'},
     );
     if (!await launchUrl(uri)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('메일 앱을 열 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('메일 앱을 열 수 없습니다.')));
     }
   }
 
@@ -62,9 +66,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final uri = Uri(scheme: 'tel', path: '+821044140703');
     if (!await launchUrl(uri)) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('전화 앱을 열 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('전화 앱을 열 수 없습니다.')));
     }
   }
 
@@ -74,9 +78,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       await AppSettings.openAppSettings(type: AppSettingsType.notification);
     } on PlatformException {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('알림 설정 화면을 열 수 없습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('알림 설정 화면을 열 수 없습니다.')));
     }
   }
 
@@ -121,9 +125,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     } on DioException catch (e) {
       if (mounted) {
         final msg = getApiErrorMessage(e, fallback: '계정 삭제에 실패했습니다.');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }
@@ -131,83 +135,68 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final wc = context.wc;
-    return Scaffold(
-      backgroundColor: wc.bg,
-      body: SafeArea(
-        child: ListView(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-              child: Text(
-                '더보기',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: wc.text,
-                  letterSpacing: -0.7,
-                ),
-              ),
-            ),
-            // Profile card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: wc.surface,
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: wc.border),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: wc.accentSoft,
-                        borderRadius: BorderRadius.circular(14),
+    final appVersion = ref
+        .watch(_packageInfoProvider)
+        .maybeWhen(data: (info) => 'v${info.version}', orElse: () => '');
+    return WCPageScaffold(
+      header: const WCHeader(title: '더보기'),
+      contentPadding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Profile card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: WCSpacing.pageX),
+            child: WCCard(
+              padding: const EdgeInsets.all(WCSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: wc.accentSoft,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _memberName.isEmpty ? '?' : _memberName[0],
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: wc.accentInk,
                       ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _memberName.isEmpty ? '?' : _memberName[0],
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: wc.accentInk,
+                    ),
+                  ),
+                  const SizedBox(width: WCSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _memberName.isEmpty ? '...' : _memberName,
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: wc.text,
+                            letterSpacing: -0.3,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: WCSpacing.xxs),
+                        Text(
+                          '원천청년부',
+                          style: TextStyle(fontSize: 12, color: wc.textTer),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _memberName.isEmpty ? '...' : _memberName,
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: wc.text,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '원천청년부',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: wc.textTer,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
-            const SectionLabel('알림'),
-            _Group(items: [
+          ),
+          const SectionLabel('알림'),
+          _Group(
+            items: [
               _Row(
                 icon: FluentIcons.alert_24_regular,
                 label: '알림 설정',
@@ -217,9 +206,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 onTap: _openNotificationSettings,
               ),
-            ]),
-            const SectionLabel('계정'),
-            _Group(items: [
+            ],
+          ),
+          const SectionLabel('계정'),
+          _Group(
+            items: [
               _Row(
                 icon: FluentIcons.person_prohibited_24_regular,
                 label: '차단 관리',
@@ -239,9 +230,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 label: '로그아웃',
                 onTap: _handleLogout,
               ),
-            ]),
-            const SectionLabel('지원'),
-            _Group(items: [
+            ],
+          ),
+          const SectionLabel('지원'),
+          _Group(
+            items: [
               _Row(
                 icon: FluentIcons.mail_24_regular,
                 label: '문의 이메일',
@@ -260,27 +253,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 ),
                 onTap: _openSupportPhone,
               ),
-            ]),
-            const SectionLabel('위험 영역', danger: true),
-            _Group(items: [
+            ],
+          ),
+          const SectionLabel('위험 영역', danger: true),
+          _Group(
+            items: [
               _Row(
                 icon: FluentIcons.delete_24_regular,
                 label: '계정 삭제',
                 danger: true,
                 onTap: _handleDeleteAccount,
               ),
-            ]),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 120),
-              child: Center(
-                child: Text(
-                  '원천청년부 · v1.0.0',
-                  style: TextStyle(fontSize: 11, color: wc.textTer),
-                ),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              WCSpacing.pageX,
+              WCSpacing.lg,
+              WCSpacing.pageX,
+              0,
+            ),
+            child: Center(
+              child: Text(
+                appVersion.isEmpty ? '원천청년부' : '원천청년부 · $appVersion',
+                style: TextStyle(fontSize: 11, color: wc.textTer),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -294,15 +294,11 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) {
     final wc = context.wc;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: wc.surface,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: wc.border),
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: WCSpacing.pageX),
+      child: WCCard(
+        padding: EdgeInsets.zero,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(WCRadius.card),
           child: Column(
             children: [
               for (var i = 0; i < items.length; i++) ...[
@@ -343,48 +339,56 @@ class _Row extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final wc = context.wc;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap == null
-            ? null
-            : () {
-                Haptic.light();
-                onTap!();
-              },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 26,
-                child: Center(
-                  child: Icon(
-                    icon,
-                    size: 19,
-                    color: danger ? wc.danger : wc.textSec,
+    return Semantics(
+      button: onTap != null,
+      enabled: onTap != null,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap == null
+              ? null
+              : () {
+                  Haptic.light();
+                  onTap!();
+                },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: WCSpacing.md,
+              vertical: WCSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 26,
+                  child: Center(
+                    child: Icon(
+                      icon,
+                      size: 18,
+                      color: danger ? wc.danger : wc.textSec,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w500,
-                    color: danger ? wc.danger : wc.text,
-                    letterSpacing: -0.3,
+                const SizedBox(width: WCSpacing.sm),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: danger ? wc.danger : wc.text,
+                      letterSpacing: -0.3,
+                    ),
                   ),
                 ),
-              ),
-              trailing ??
-                  Icon(
-                    FluentIcons.chevron_right_24_regular,
-                    size: 16,
-                    color: wc.textTer,
-                  ),
-            ],
+                trailing ??
+                    Icon(
+                      FluentIcons.chevron_right_24_regular,
+                      size: 16,
+                      color: wc.textTer,
+                    ),
+              ],
+            ),
           ),
         ),
       ),

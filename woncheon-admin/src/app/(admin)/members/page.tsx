@@ -28,7 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Search, UserPlus, RefreshCw, X } from "lucide-react";
+import { Search, UserPlus, RefreshCw, X, ArrowRightLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface Member {
@@ -38,7 +38,9 @@ interface Member {
   createdAt: string;
   birthDate: string;
   gender: string;
+  groupId: number | null;
   groupName: string;
+  isLeader: boolean;
 }
 
 interface GroupOption {
@@ -62,6 +64,10 @@ export default function MembersPage() {
   const [newGroupId, setNewGroupId] = useState("none");
   const [adding, setAdding] = useState(false);
   const [groups, setGroups] = useState<GroupOption[]>([]);
+  // 목장 이동
+  const [moveTarget, setMoveTarget] = useState<Member | null>(null);
+  const [moveGroupId, setMoveGroupId] = useState<string>("");
+  const [moving, setMoving] = useState(false);
 
   async function loadMembers() {
     setLoading(true);
@@ -144,6 +150,43 @@ export default function MembersPage() {
       toast.error("등록에 실패했습니다.");
     } finally {
       setAdding(false);
+    }
+  }
+
+  function openMove(m: Member) {
+    setMoveTarget(m);
+    setMoveGroupId(m.groupId != null ? String(m.groupId) : "");
+  }
+
+  function closeMove() {
+    if (moving) return;
+    setMoveTarget(null);
+  }
+
+  async function handleMoveGroup() {
+    if (!moveTarget || !moveGroupId) return;
+    setMoving(true);
+    try {
+      const res = await fetch(
+        `/api/admin/members/${moveTarget.memberId}/group`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ groupId: Number(moveGroupId) }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error ?? "목장 이동에 실패했습니다.");
+        return;
+      }
+      toast.success(`${moveTarget.name} 회원의 목장을 변경했습니다.`);
+      setMoveTarget(null);
+      await loadMembers();
+    } catch {
+      toast.error("목장 이동에 실패했습니다.");
+    } finally {
+      setMoving(false);
     }
   }
 
@@ -262,25 +305,33 @@ export default function MembersPage() {
                 <TableHead>성별</TableHead>
                 <TableHead>생년월일</TableHead>
                 <TableHead>상태</TableHead>
+                <TableHead className="w-[60px]">이동</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-slate-400">
+                  <TableCell colSpan={6} className="text-center py-10 text-slate-400">
                     불러오는 중...
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-slate-400">
+                  <TableCell colSpan={6} className="text-center py-10 text-slate-400">
                     검색 결과가 없습니다
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((m) => (
                   <TableRow key={m.memberId}>
-                    <TableCell className="font-medium">{m.name}</TableCell>
+                    <TableCell className="font-medium">
+                      {m.name}
+                      {m.isLeader && (
+                        <Badge variant="outline" className="ml-1.5 text-[10px] px-1.5 py-0">
+                          목자
+                        </Badge>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="font-normal">
                         {m.groupName}
@@ -298,6 +349,17 @@ export default function MembersPage() {
                           활성
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        title="목장 이동"
+                        onClick={() => openMove(m)}
+                      >
+                        <ArrowRightLeft className="w-3.5 h-3.5" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -371,6 +433,63 @@ export default function MembersPage() {
             <Button onClick={handleAddMember} disabled={adding}>
               {adding ? "등록 중..." : "등록"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 목장 이동 Dialog */}
+      <Dialog open={!!moveTarget} onOpenChange={(open) => !open && closeMove()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>목장 이동</DialogTitle>
+          </DialogHeader>
+          {moveTarget && (
+            <div className="space-y-4">
+              <p className="text-sm text-slate-500">
+                <span className="font-medium text-slate-900 dark:text-white">
+                  {moveTarget.name}
+                </span>{" "}
+                회원을 다른 목장으로 이동합니다. (현재: {moveTarget.groupName})
+              </p>
+              {moveTarget.isLeader ? (
+                <p className="text-sm text-red-500">
+                  이 회원은 현재 목장의 목자입니다. 목장 관리에서 먼저 다른
+                  사람으로 목자를 교체한 뒤 이동시켜주세요.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <Label>이동할 목장</Label>
+                  <Select
+                    value={moveGroupId}
+                    onValueChange={(v) => setMoveGroupId(v ?? "")}
+                  >
+                    <SelectTrigger>
+                      <SelectValue>
+                        {groups.find((g) => String(g.id) === moveGroupId)
+                          ?.name ?? "선택"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {groups.map((g) => (
+                        <SelectItem key={g.id} value={String(g.id)}>
+                          {g.name} 목장
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeMove} disabled={moving}>
+              취소
+            </Button>
+            {!moveTarget?.isLeader && (
+              <Button onClick={handleMoveGroup} disabled={moving || !moveGroupId}>
+                {moving ? "이동 중..." : "이동"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

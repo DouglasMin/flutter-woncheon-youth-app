@@ -6,6 +6,7 @@ import 'package:woncheon_youth/core/theme/app_theme.dart';
 import 'package:woncheon_youth/features/prayer/domain/prayer_filter.dart';
 import 'package:woncheon_youth/features/prayer/presentation/prayer_providers.dart';
 import 'package:woncheon_youth/shared/widgets/adaptive.dart';
+import 'package:woncheon_youth/shared/widgets/wc_widgets.dart';
 
 class PrayerFilterBar extends ConsumerWidget {
   const PrayerFilterBar({super.key});
@@ -18,11 +19,11 @@ class PrayerFilterBar extends ConsumerWidget {
       height: 38,
       child: ListView(
         scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: WCSpacing.pageX),
         children: [
           for (final preset in PrayerFilterPreset.values)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsets.only(right: WCSpacing.xs),
               child: _FilterChip(
                 label: preset.label,
                 selected: filter.preset == preset,
@@ -33,14 +34,11 @@ class PrayerFilterBar extends ConsumerWidget {
           if (filter.preset == PrayerFilterPreset.custom &&
               filter.customStart != null)
             Padding(
-              padding: const EdgeInsets.only(left: 4),
+              padding: const EdgeInsets.only(left: WCSpacing.xxs),
               child: Center(
                 child: Text(
                   _formatRange(filter.customStart!, filter.customEnd),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.textSecondary,
-                  ),
+                  style: TextStyle(fontSize: 12, color: context.textSecondary),
                 ),
               ),
             ),

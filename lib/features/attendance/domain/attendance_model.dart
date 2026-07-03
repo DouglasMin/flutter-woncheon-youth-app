@@ -5,9 +5,9 @@ class GroupInfo {
   final String name;
 
   factory GroupInfo.fromJson(Map<String, dynamic> json) => GroupInfo(
-        id: int.parse(json['id'].toString()),
-        name: json['name'] as String,
-      );
+    id: int.parse(json['id'].toString()),
+    name: json['name'] as String,
+  );
 }
 
 class GroupMember {
@@ -32,24 +32,24 @@ class GroupMember {
   final int? totalWeeks;
 
   factory GroupMember.fromJson(Map<String, dynamic> json) => GroupMember(
-        memberId: json['member_id']?.toString() ?? '',
-        memberName: json['member_name']?.toString() ?? '',
-        note: json['note']?.toString(),
-        isPresent: json['is_present'] == true,
-        rate: (json['rate'] as num?)?.toDouble(),
-        presentWeeks: (json['present_weeks'] as num?)?.toInt(),
-        totalWeeks: (json['total_weeks'] as num?)?.toInt(),
-      );
+    memberId: json['member_id']?.toString() ?? '',
+    memberName: json['member_name']?.toString() ?? '',
+    note: json['note']?.toString(),
+    isPresent: json['is_present'] == true,
+    rate: (json['rate'] as num?)?.toDouble(),
+    presentWeeks: (json['present_weeks'] as num?)?.toInt(),
+    totalWeeks: (json['total_weeks'] as num?)?.toInt(),
+  );
 
   GroupMember copyWith({bool? isPresent}) => GroupMember(
-        memberId: memberId,
-        memberName: memberName,
-        note: note,
-        isPresent: isPresent ?? this.isPresent,
-        rate: rate,
-        presentWeeks: presentWeeks,
-        totalWeeks: totalWeeks,
-      );
+    memberId: memberId,
+    memberName: memberName,
+    note: note,
+    isPresent: isPresent ?? this.isPresent,
+    rate: rate,
+    presentWeeks: presentWeeks,
+    totalWeeks: totalWeeks,
+  );
 }
 
 class GroupStats {
@@ -68,12 +68,12 @@ class GroupStats {
   final double ratePercent;
 
   factory GroupStats.fromJson(Map<String, dynamic> json) => GroupStats(
-        groupId: int.parse(json['group_id'].toString()),
-        groupName: json['group_name'] as String,
-        presentCount: int.parse(json['present_count']?.toString() ?? '0'),
-        totalCount: int.parse(json['total_count']?.toString() ?? '0'),
-        ratePercent: double.parse(json['rate_percent']?.toString() ?? '0'),
-      );
+    groupId: int.parse(json['group_id'].toString()),
+    groupName: json['group_name'] as String,
+    presentCount: int.parse(json['present_count']?.toString() ?? '0'),
+    totalCount: int.parse(json['total_count']?.toString() ?? '0'),
+    ratePercent: double.parse(json['rate_percent']?.toString() ?? '0'),
+  );
 }
 
 /// 본인의 주일 출결 상태.
@@ -93,13 +93,13 @@ class TodayStatus {
   final DateTime? markedAt;
 
   factory TodayStatus.fromJson(Map<String, dynamic> json) => TodayStatus(
-        isPresent: json['isPresent'] == true,
-        hasRecord: json['hasRecord'] == true,
-        markedBy: json['markedBy'] as String?,
-        markedAt: json['markedAt'] != null
-            ? DateTime.tryParse(json['markedAt'] as String)
-            : null,
-      );
+    isPresent: json['isPresent'] == true,
+    hasRecord: json['hasRecord'] == true,
+    markedBy: json['markedBy'] as String?,
+    markedAt: json['markedAt'] != null
+        ? DateTime.tryParse(json['markedAt'] as String)
+        : null,
+  );
 }
 
 class HistoryEntry {
@@ -108,9 +108,9 @@ class HistoryEntry {
   final bool isPresent;
 
   factory HistoryEntry.fromJson(Map<String, dynamic> json) => HistoryEntry(
-        date: DateTime.parse(json['date'] as String),
-        isPresent: json['isPresent'] == true,
-      );
+    date: DateTime.parse(json['date'] as String),
+    isPresent: json['isPresent'] == true,
+  );
 }
 
 class MyStats {
@@ -125,10 +125,10 @@ class MyStats {
   final double rate;
 
   factory MyStats.fromJson(Map<String, dynamic> json) => MyStats(
-        totalWeeks: (json['totalWeeks'] as num).toInt(),
-        presentWeeks: (json['presentWeeks'] as num).toInt(),
-        rate: (json['rate'] as num).toDouble(),
-      );
+    totalWeeks: (json['totalWeeks'] as num).toInt(),
+    presentWeeks: (json['presentWeeks'] as num).toInt(),
+    rate: (json['rate'] as num).toDouble(),
+  );
 }
 
 /// 주간 출결 종합 — 리더/멤버 공통 응답.
@@ -166,7 +166,7 @@ class WeeklyAttendance {
         members: json['members'] == null
             ? null
             : (json['members'] as List<dynamic>)
-                .map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
-                .toList(),
+                  .map((e) => GroupMember.fromJson(e as Map<String, dynamic>))
+                  .toList(),
       );
 }

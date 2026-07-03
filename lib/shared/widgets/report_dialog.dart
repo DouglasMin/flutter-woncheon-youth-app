@@ -11,13 +11,7 @@ Future<void> showReportDialog({
   required String targetType, // 'prayer' or 'comment'
   required String targetId,
 }) async {
-  final reasons = [
-    '부적절한 내용',
-    '스팸/광고',
-    '혐오 발언',
-    '개인정보 노출',
-    '기타',
-  ];
+  final reasons = ['부적절한 내용', '스팸/광고', '혐오 발언', '개인정보 노출', '기타'];
 
   String? selectedReason;
 
@@ -83,7 +77,7 @@ Future<void> showReportDialog({
 
     if (context.mounted) {
       if (isIOS) {
-        showCupertinoDialog<void>(
+        await showCupertinoDialog<void>(
           context: context,
           builder: (ctx) => CupertinoAlertDialog(
             content: const Text('신고가 접수되었습니다.'),
@@ -96,16 +90,16 @@ Future<void> showReportDialog({
           ),
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('신고가 접수되었습니다.')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('신고가 접수되었습니다.')));
       }
     }
   } on DioException {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('신고에 실패했습니다.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('신고에 실패했습니다.')));
     }
   }
 }

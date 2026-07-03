@@ -55,10 +55,13 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
     await Haptic.medium();
 
     try {
-      await ref.read(apiClientProvider).dio.post<Map<String, dynamic>>(
-        '/auth/register-request',
-        data: {'name': name, 'phone': phone, 'note': note},
-      );
+      await ref
+          .read(apiClientProvider)
+          .dio
+          .post<Map<String, dynamic>>(
+            '/auth/register-request',
+            data: {'name': name, 'phone': phone, 'note': note},
+          );
       setState(() => _success = true);
       await Haptic.light();
     } on DioException catch (e) {
@@ -87,8 +90,11 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
                   child: IconButton(
                     onPressed: () => context.go(AppRoutes.login),
                     padding: EdgeInsets.zero,
-                    icon: Icon(FluentIcons.dismiss_24_regular,
-                        color: wc.textSec, size: 26),
+                    icon: Icon(
+                      FluentIcons.dismiss_24_regular,
+                      color: wc.textSec,
+                      size: 26,
+                    ),
                   ),
                 ),
                 Expanded(
@@ -157,8 +163,11 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
                 onPressed: () => context.pop(),
                 padding: EdgeInsets.zero,
                 alignment: Alignment.centerLeft,
-                icon: Icon(FluentIcons.chevron_left_24_regular,
-                    color: wc.textSec, size: 26),
+                icon: Icon(
+                  FluentIcons.chevron_left_24_regular,
+                  color: wc.textSec,
+                  size: 26,
+                ),
               ),
               const SizedBox(height: 14),
               Text(
@@ -174,11 +183,7 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
               const SizedBox(height: 8),
               Text(
                 '정보를 남겨주시면 담당자가\n확인 후 연락드릴게요.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: wc.textSec,
-                  height: 1.55,
-                ),
+                style: TextStyle(fontSize: 14, color: wc.textSec, height: 1.55),
               ),
               const SizedBox(height: 26),
               _field(
@@ -200,6 +205,7 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
                 minLines: 4,
                 maxLines: 6,
                 action: TextInputAction.newline,
+                keyboardType: TextInputType.multiline,
               ),
               if (_errorMessage != null) ...[
                 const SizedBox(height: 8),
@@ -251,8 +257,10 @@ class _RegisterRequestPageState extends ConsumerState<RegisterRequestPage> {
         filled: true,
         fillColor: wc.surface,
         hintStyle: TextStyle(color: wc.textTer, fontSize: 15),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: wc.border),

@@ -30,11 +30,12 @@ class AttendanceStatsPage extends ConsumerWidget {
             _NavBar(onBack: () => context.pop()),
             Expanded(
               child: weeklyAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => Center(
-                  child: Text('통계를 불러올 수 없습니다.',
-                      style: TextStyle(color: wc.textSec)),
+                  child: Text(
+                    '통계를 불러올 수 없습니다.',
+                    style: TextStyle(color: wc.textSec),
+                  ),
                 ),
                 data: (weekly) {
                   return SingleChildScrollView(
@@ -102,8 +103,11 @@ class _NavBar extends StatelessWidget {
         children: [
           IconButton(
             onPressed: onBack,
-            icon: Icon(FluentIcons.chevron_left_24_regular,
-                color: wc.text, size: 24),
+            icon: Icon(
+              FluentIcons.chevron_left_24_regular,
+              color: wc.text,
+              size: 24,
+            ),
           ),
           Expanded(
             child: Text(
@@ -157,8 +161,10 @@ class _HistoryChart extends StatelessWidget {
         child: SizedBox(
           height: 200,
           child: Center(
-            child: Text('데이터가 없습니다.',
-                style: TextStyle(color: wc.textTer, fontSize: 13)),
+            child: Text(
+              '데이터가 없습니다.',
+              style: TextStyle(color: wc.textTer, fontSize: 13),
+            ),
           ),
         ),
       );
@@ -187,10 +193,12 @@ class _HistoryChart extends StatelessWidget {
               ),
               borderData: FlBorderData(show: false),
               titlesData: FlTitlesData(
-                topTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                rightTitles:
-                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                rightTitles: const AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
                 leftTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
@@ -200,16 +208,19 @@ class _HistoryChart extends StatelessWidget {
                       final label = value == 1
                           ? '출석'
                           : value == 0
-                              ? '결석'
-                              : '';
+                          ? '결석'
+                          : '';
                       if (label.isEmpty) return const SizedBox.shrink();
                       return Padding(
                         padding: const EdgeInsets.only(right: 6),
-                        child: Text(label,
-                            style: TextStyle(
-                                color: wc.textTer,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w500)),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: wc.textTer,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -281,8 +292,8 @@ class _MyRateCard extends StatelessWidget {
     final rateColor = ratePercent >= 80
         ? wc.success
         : ratePercent >= 50
-            ? wc.accent
-            : wc.danger;
+        ? wc.accent
+        : wc.danger;
 
     return WCCard(
       child: Padding(
@@ -295,18 +306,12 @@ class _MyRateCard extends StatelessWidget {
                 children: [
                   Text(
                     '${stats.presentWeeks}/${stats.totalWeeks}회 출석',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: wc.textSec,
-                    ),
+                    style: TextStyle(fontSize: 13, color: wc.textSec),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '최근 ${stats.totalWeeks}주 기준',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: wc.textTer,
-                    ),
+                    style: TextStyle(fontSize: 11, color: wc.textTer),
                   ),
                 ],
               ),
@@ -330,18 +335,18 @@ class _MyRateCard extends StatelessWidget {
 
 class _GroupAverageCard extends StatelessWidget {
   const _GroupAverageCard({required this.stat})
-      : _placeholder = null,
-        _loading = false;
+    : _placeholder = null,
+      _loading = false;
 
   const _GroupAverageCard.loading({required String groupName})
-      : stat = null,
-        _placeholder = groupName,
-        _loading = true;
+    : stat = null,
+      _placeholder = groupName,
+      _loading = true;
 
   const _GroupAverageCard.unavailable({required String groupName})
-      : stat = null,
-        _placeholder = groupName,
-        _loading = false;
+    : stat = null,
+      _placeholder = groupName,
+      _loading = false;
 
   final GroupStats? stat;
   final String? _placeholder;
@@ -376,12 +381,9 @@ class _GroupAverageCard extends StatelessWidget {
                     hasData
                         ? '최근 분기 평균 출석률'
                         : _loading
-                            ? '불러오는 중...'
-                            : '데이터 없음',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: wc.textTer,
-                    ),
+                        ? '불러오는 중...'
+                        : '데이터 없음',
+                    style: TextStyle(fontSize: 11, color: wc.textTer),
                   ),
                 ],
               ),

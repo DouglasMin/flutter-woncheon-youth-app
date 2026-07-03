@@ -12,6 +12,7 @@ abstract final class AppConstants {
   static const String memberIdKey = 'member_id';
   static const String memberNameKey = 'member_name';
   static const String blockedMembersKey = 'blocked_members';
+
   /// 초기 비번 그대로면 true. 비번 변경 성공 시 false로 set.
   /// 앱 재실행 시 splash가 이 값을 보고 changePassword 페이지로 강제 redirect.
   static const String isFirstLoginKey = 'is_first_login';
