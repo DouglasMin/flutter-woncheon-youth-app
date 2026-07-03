@@ -218,6 +218,33 @@ functions:
             identitySource: method.request.header.Authorization
             type: request
 
+  # ── Notices ────────────────────────────────
+  listNotices:
+    handler: src/functions/notice/list.handler
+    events:
+      - http:
+          path: /notices
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
+  getNotice:
+    handler: src/functions/notice/get.handler
+    events:
+      - http:
+          path: /notices/{noticeId}
+          method: get
+          cors: true
+          authorizer:
+            name: jwtAuthorizer
+            resultTtlInSeconds: 0
+            identitySource: method.request.header.Authorization
+            type: request
+
   # ── Comments & Reactions ─────────────────────
   listComments:
     handler: src/functions/comment/list.handler
