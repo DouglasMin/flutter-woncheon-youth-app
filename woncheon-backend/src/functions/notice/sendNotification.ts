@@ -6,6 +6,10 @@ import { makeNoticePreview, shouldSendNoticeNotification } from '../../types/not
 
 type StreamImage = Record<string, { S?: string; BOOL?: boolean; N?: string }>;
 
+function isNoticePushEnabled(): boolean {
+  return process.env.NOTICE_PUSH_ENABLED === 'true';
+}
+
 function readString(image: StreamImage | undefined, key: string): string | undefined {
   return image?.[key]?.S;
 }
@@ -61,14 +65,21 @@ export const handler: DynamoDBStreamHandler = async (event) => {
     const claimed = await claimNotification(next.noticeId);
     if (!claimed) continue;
 
-    const result = await publishNoticeToAllDevices({
-      noticeId: next.noticeId,
-      title: next.title,
-      body: makeNoticePreview(next.content),
-    });
+    const result = isNoticePushEnabled()
+      ? await publishNoticeToAllDevices({
+          noticeId: next.noticeId,
+          title: next.title,
+          body: makeNoticePreview(next.content),
+        })
+      : { total: 0, successCount: 0, failureCount: 0 };
 
-    const notificationStatus =
-      result.failureCount === 0 ? 'sent' : result.successCount > 0 ? 'partial_fail' : 'failed';
+    const notificationStatus = !isNoticePushEnabled()
+      ? 'disabled'
+      : result.failureCount === 0
+      ? 'sent'
+      : result.successCount > 0
+      ? 'partial_fail'
+      : 'failed';
 
     await docClient.send(
       new UpdateCommand({

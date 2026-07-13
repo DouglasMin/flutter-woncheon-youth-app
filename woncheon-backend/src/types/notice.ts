@@ -5,7 +5,8 @@ export type NoticeNotificationStatus =
   | 'sending'
   | 'sent'
   | 'partial_fail'
-  | 'failed';
+  | 'failed'
+  | 'disabled';
 
 export interface NoticeRecord {
   PK?: string;

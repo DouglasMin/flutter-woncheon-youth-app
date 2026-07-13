@@ -14,6 +14,7 @@ provider:
     JWT_REFRESH_SECRET: ${ssm:/woncheon/${sls:stage}/jwt-refresh-secret}
     SNS_IOS_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-ios-arn, ''}
     SNS_ANDROID_PLATFORM_ARN: ${ssm:/woncheon/${sls:stage}/sns-android-arn, ''}
+    NOTICE_PUSH_ENABLED: ${ssm:/woncheon/${sls:stage}/notice-push-enabled, 'false'}
     PG_HOST: ${ssm:/woncheon/${sls:stage}/pg-host, ''}
     PG_PORT: ${ssm:/woncheon/${sls:stage}/pg-port, '5432'}
     PG_DATABASE: ${ssm:/woncheon/${sls:stage}/pg-database, 'woncheon'}

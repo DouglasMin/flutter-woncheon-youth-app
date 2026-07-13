@@ -36,9 +36,11 @@ describe('notice stream notification worker', () => {
   beforeEach(() => {
     publishNoticeToAllDevices.mockReset();
     send.mockReset();
+    delete process.env.NOTICE_PUSH_ENABLED;
   });
 
   it('sends one push and records notifiedAt when a draft is first published', async () => {
+    process.env.NOTICE_PUSH_ENABLED = 'true';
     send.mockResolvedValue({});
     publishNoticeToAllDevices.mockResolvedValue({
       total: 2,
@@ -109,5 +111,38 @@ describe('notice stream notification worker', () => {
 
     expect(send).not.toHaveBeenCalled();
     expect(publishNoticeToAllDevices).not.toHaveBeenCalled();
+  });
+
+  it('claims the notice but skips SNS fan-out when notice push is disabled', async () => {
+    process.env.NOTICE_PUSH_ENABLED = 'false';
+    send.mockResolvedValue({});
+
+    await handler(
+      {
+        Records: [
+          {
+            dynamodb: {
+              OldImage: image({ noticeId: 'NOTICE03', status: 'draft' }),
+              NewImage: image({
+                noticeId: 'NOTICE03',
+                title: '푸시 비활성 공지',
+                status: 'published',
+              }),
+            },
+          },
+        ],
+      } as never,
+      {} as never,
+      vi.fn(),
+    );
+
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(publishNoticeToAllDevices).not.toHaveBeenCalled();
+    expect(send.mock.calls[1][0].input.ExpressionAttributeValues).toMatchObject({
+      ':status': 'disabled',
+      ':total': 0,
+      ':success': 0,
+      ':failure': 0,
+    });
   });
 });
