@@ -4,6 +4,19 @@ import type {
 } from 'aws-lambda';
 import { verifyAccessToken } from '../../libs/jwt.js';
 
+function stageWildcardArn(methodArn: string): string {
+  const arnParts = methodArn.split(':');
+  const resourceParts = arnParts[5]?.split('/') ?? [];
+  const [apiId, stage] = resourceParts;
+
+  if (!apiId || !stage) return methodArn;
+
+  return [
+    ...arnParts.slice(0, 5),
+    `${apiId}/${stage}/*/*`,
+  ].join(':');
+}
+
 export const handler = async (
   event: APIGatewayRequestAuthorizerEvent,
 ): Promise<APIGatewayAuthorizerResult> => {
@@ -24,7 +37,7 @@ export const handler = async (
           {
             Action: 'execute-api:Invoke',
             Effect: 'Allow',
-            Resource: event.methodArn,
+            Resource: stageWildcardArn(event.methodArn),
           },
         ],
       },
