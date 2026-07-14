@@ -19,10 +19,7 @@ import 'package:woncheon_youth/core/update/version_compare.dart';
 abstract final class AppUpdateService {
   /// 개발 시 다이얼로그 UI 강제 표시.
   /// `flutter run --dart-define=FORCE_UPDATE=true`
-  static const _forceForTest = bool.fromEnvironment(
-    'FORCE_UPDATE',
-    defaultValue: false,
-  );
+  static const _forceForTest = bool.fromEnvironment('FORCE_UPDATE');
 
   static const _bundleId = 'com.woncheon.woncheonYouth';
 

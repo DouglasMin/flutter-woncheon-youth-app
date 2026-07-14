@@ -43,7 +43,7 @@ class NoticeListPage extends ConsumerWidget {
               WCSpacing.pageX,
               0,
               WCSpacing.pageX,
-              WCSpacing.bottomNavClearance,
+              48,
             ),
             itemCount: data.items.length,
             separatorBuilder: (_, __) => const SizedBox(height: WCSpacing.xs),
@@ -68,19 +68,57 @@ class NoticeListPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const WCHeader(
-              title: '공지사항',
-              subtitle: '청년부 소식을 확인하세요',
-              padding: EdgeInsets.fromLTRB(
-                WCSpacing.pageX,
-                WCSpacing.xl,
-                WCSpacing.pageX,
-                WCSpacing.sm,
-              ),
-            ),
+            const _NoticeListTopBar(),
             Expanded(child: content),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _NoticeListTopBar extends StatelessWidget {
+  const _NoticeListTopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final wc = context.wc;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: wc.border, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            tooltip: '뒤로',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+                return;
+              }
+              context.go(AppRoutes.home);
+            },
+            icon: Icon(
+              FluentIcons.chevron_left_24_regular,
+              color: wc.text,
+              size: 24,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              '공지사항',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+                color: wc.text,
+              ),
+            ),
+          ),
+          const SizedBox(width: 44),
+        ],
       ),
     );
   }

@@ -7,6 +7,26 @@ import { toNoticeListItem } from '../../types/notice.js';
 
 const VALID_CURSOR_KEYS = new Set(['PK', 'SK', 'GSI2PK', 'GSI2SK']);
 
+function encodeCursor(key: Record<string, unknown>): string {
+  return Buffer.from(JSON.stringify(key)).toString('base64');
+}
+
+function cursorKeyFromNotice(
+  notice: NoticeRecord | undefined,
+): Record<string, string> | undefined {
+  if (!notice) return undefined;
+  const { PK, SK, GSI2PK, GSI2SK } = notice;
+  if (
+    typeof PK !== 'string' ||
+    typeof SK !== 'string' ||
+    typeof GSI2PK !== 'string' ||
+    typeof GSI2SK !== 'string'
+  ) {
+    return undefined;
+  }
+  return { PK, SK, GSI2PK, GSI2SK };
+}
+
 function parseCursor(
   cursorParam: string | undefined,
 ): Record<string, unknown> | undefined {
@@ -44,6 +64,7 @@ function parseLimit(limitParam: string | undefined): number {
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   const limit = parseLimit(event.queryStringParameters?.limit);
+  const queryLimit = Math.min(limit * 3, 100);
   const exclusiveStartKey = parseCursor(
     event.queryStringParameters?.cursor ?? undefined,
   );
@@ -60,15 +81,22 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         ':published': 'published',
       },
       ScanIndexForward: false,
-      Limit: limit,
+      Limit: queryLimit,
       ExclusiveStartKey: exclusiveStartKey,
     }),
   );
 
-  const items = ((result.Items ?? []) as NoticeRecord[]).map(toNoticeListItem);
-  const nextCursor = result.LastEvaluatedKey
-    ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString('base64')
-    : null;
+  const publishedRecords = ((result.Items ?? []) as NoticeRecord[]).filter(
+    (item) => item.status === 'published',
+  );
+  const pageRecords = publishedRecords.slice(0, limit);
+  const items = pageRecords.map(toNoticeListItem);
+  const overflowCursorKey =
+    publishedRecords.length > limit
+      ? cursorKeyFromNotice(pageRecords[pageRecords.length - 1])
+      : undefined;
+  const nextCursorKey = overflowCursorKey ?? result.LastEvaluatedKey;
+  const nextCursor = nextCursorKey ? encodeCursor(nextCursorKey) : null;
 
   return success({
     items,

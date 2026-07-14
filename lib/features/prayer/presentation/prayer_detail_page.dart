@@ -296,6 +296,16 @@ class _ErrorView extends StatelessWidget {
   }
 }
 
+@visibleForTesting
+Widget buildPrayerCommentsSectionForTest(String prayerId) {
+  return _CommentsSection(prayerId: prayerId);
+}
+
+@visibleForTesting
+Widget buildPrayerReactionRowForTest(String prayerId) {
+  return _ReactionRow(prayerId: prayerId);
+}
+
 class _CommentsSection extends ConsumerStatefulWidget {
   const _CommentsSection({required this.prayerId});
   final String prayerId;
@@ -329,7 +339,7 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
 
   Future<void> _submit() async {
     final content = _controller.text.trim();
-    if (content.isEmpty) return;
+    if (_isSending || content.isEmpty) return;
     setState(() => _isSending = true);
     await Haptic.light();
     try {
@@ -555,7 +565,10 @@ class _CommentsSectionState extends ConsumerState<_CommentsSection> {
         ),
         const SizedBox(height: 14),
         commentsAsync.when(
-          loading: () => const SizedBox.shrink(),
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: WCLoadingView(compact: true, label: '불러오는 중'),
+          ),
           error: (_, __) => Text(
             '댓글을 불러올 수 없습니다.',
             style: TextStyle(color: wc.textTer, fontSize: 13),

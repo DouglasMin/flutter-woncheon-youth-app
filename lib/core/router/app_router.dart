@@ -33,8 +33,8 @@ abstract final class AppRoutes {
   // Stacked over tabs
   static const prayerCreate = '/prayers/create';
   static String prayerDetail(String id) => '/prayers/$id';
-  static const notices = '/home/notices';
-  static String noticeDetail(String id) => '/home/notices/$id';
+  static const notices = '/notices';
+  static String noticeDetail(String id) => '/notices/$id';
   static const attendanceStats = '/attendance/stats';
   static const blocks = '/settings/blocks';
 }
@@ -83,6 +83,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.changePassword,
         builder: (_, __) => const ChangePasswordPage(),
       ),
+      GoRoute(
+        path: AppRoutes.notices,
+        builder: (_, __) => const NoticeListPage(),
+        routes: [
+          GoRoute(
+            path: ':noticeId',
+            builder: (_, state) =>
+                NoticeDetailPage(noticeId: state.pathParameters['noticeId']!),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         parentNavigatorKey: _rootKey,
         builder: (context, state, shell) => TabShell(navigationShell: shell),
@@ -93,21 +104,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.home,
                 builder: (_, __) => const HomePage(),
-                routes: [
-                  GoRoute(
-                    path: 'notices',
-                    builder: (_, __) => const NoticeListPage(),
-                    routes: [
-                      GoRoute(
-                        path: ':noticeId',
-                        parentNavigatorKey: _rootKey,
-                        builder: (_, state) => NoticeDetailPage(
-                          noticeId: state.pathParameters['noticeId']!,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
               ),
             ],
           ),

@@ -97,7 +97,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -118,7 +118,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -131,7 +131,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -145,7 +145,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -158,7 +158,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -172,7 +172,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -186,7 +186,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -199,7 +199,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -212,7 +212,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -225,7 +225,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -239,7 +239,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -252,7 +252,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -279,7 +279,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -292,7 +292,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -305,7 +305,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -318,7 +318,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -331,7 +331,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -344,7 +344,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -358,7 +358,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -371,7 +371,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -384,7 +384,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -397,7 +397,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 
@@ -423,7 +423,7 @@ functions:
           cors: true
           authorizer:
             name: jwtAuthorizer
-            resultTtlInSeconds: 0
+            resultTtlInSeconds: 60
             identitySource: method.request.header.Authorization
             type: request
 

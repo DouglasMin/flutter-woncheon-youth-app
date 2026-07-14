@@ -51,8 +51,11 @@ class _SplashPageState extends ConsumerState<SplashPage>
     final storage = ref.read(secureStorageServiceProvider);
     final token = await storage.getAccessToken();
     if (!mounted) return;
-    if (token == null) {
-      context.go(AppRoutes.login);
+    final hasAccessToken = token != null;
+    if (!hasAccessToken) {
+      context.go(
+        decideStartupRoute(hasAccessToken: false, isFirstLogin: false),
+      );
       return;
     }
     // 초기 비번 미변경 상태에서 앱 종료한 사용자는 다시 changePassword로.
@@ -61,7 +64,9 @@ class _SplashPageState extends ConsumerState<SplashPage>
     if (!isFirstLogin) {
       unawaited(registerDeviceTokenAfterAuth(ref));
     }
-    context.go(isFirstLogin ? AppRoutes.changePassword : AppRoutes.home);
+    context.go(
+      decideStartupRoute(hasAccessToken: true, isFirstLogin: isFirstLogin),
+    );
   }
 
   @override
@@ -117,4 +122,13 @@ class _SplashPageState extends ConsumerState<SplashPage>
       ),
     );
   }
+}
+
+@visibleForTesting
+String decideStartupRoute({
+  required bool hasAccessToken,
+  required bool isFirstLogin,
+}) {
+  if (!hasAccessToken) return AppRoutes.login;
+  return isFirstLogin ? AppRoutes.changePassword : AppRoutes.home;
 }
