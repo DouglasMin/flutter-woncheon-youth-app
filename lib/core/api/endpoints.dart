@@ -9,6 +9,10 @@ abstract final class Endpoints {
   static const String prayers = '/prayers';
   static String prayer(String prayerId) => '/prayers/$prayerId';
 
+  // Notices
+  static const String notices = '/notices';
+  static String notice(String noticeId) => '/notices/$noticeId';
+
   // Comments & Reactions
   static String comments(String prayerId) => '/prayers/$prayerId/comments';
   static String comment(String prayerId, String commentId) =>

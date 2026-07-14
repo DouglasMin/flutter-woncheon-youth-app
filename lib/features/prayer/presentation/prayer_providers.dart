@@ -45,6 +45,8 @@ final reactionProvider =
     );
 
 class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
+  bool _isToggling = false;
+
   @override
   Future<ReactionState> build(String prayerId) async {
     final repo = ref.read(prayerRepositoryProvider);
@@ -52,10 +54,29 @@ class ReactionNotifier extends FamilyAsyncNotifier<ReactionState, String> {
   }
 
   Future<void> toggle() async {
-    final prayerId = arg;
-    final repo = ref.read(prayerRepositoryProvider);
-    final result = await repo.toggleReaction(prayerId);
-    state = AsyncData(result);
+    if (_isToggling) return;
+    _isToggling = true;
+
+    final previous = state.valueOrNull;
+    if (previous != null) {
+      state = AsyncData(
+        ReactionState(
+          reacted: !previous.reacted,
+          count: previous.count + (previous.reacted ? -1 : 1),
+        ),
+      );
+    }
+
+    try {
+      final repo = ref.read(prayerRepositoryProvider);
+      final result = await repo.toggleReaction(arg);
+      state = AsyncData(result);
+    } catch (error, stackTrace) {
+      if (previous != null) state = AsyncData(previous);
+      Error.throwWithStackTrace(error, stackTrace);
+    } finally {
+      _isToggling = false;
+    }
   }
 }
 
@@ -77,24 +98,28 @@ class PrayerListState {
     this.nextCursor,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.isRefreshing = false,
   });
 
   final List<PrayerItem> items;
   final String? nextCursor;
   final bool hasMore;
   final bool isLoadingMore;
+  final bool isRefreshing;
 
   PrayerListState copyWith({
     List<PrayerItem>? items,
     String? nextCursor,
     bool? hasMore,
     bool? isLoadingMore,
+    bool? isRefreshing,
   }) {
     return PrayerListState(
       items: items ?? this.items,
       nextCursor: nextCursor ?? this.nextCursor,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
     );
   }
 
@@ -105,12 +130,18 @@ class PrayerListState {
           runtimeType == other.runtimeType &&
           hasMore == other.hasMore &&
           isLoadingMore == other.isLoadingMore &&
+          isRefreshing == other.isRefreshing &&
           nextCursor == other.nextCursor &&
           listEquals(items, other.items);
 
   @override
-  int get hashCode =>
-      Object.hash(hasMore, isLoadingMore, nextCursor, Object.hashAll(items));
+  int get hashCode => Object.hash(
+    hasMore,
+    isLoadingMore,
+    isRefreshing,
+    nextCursor,
+    Object.hashAll(items),
+  );
 }
 
 class PrayerListNotifier extends AsyncNotifier<PrayerListState> {
@@ -134,7 +165,12 @@ class PrayerListNotifier extends AsyncNotifier<PrayerListState> {
 
   Future<void> loadMore() async {
     final current = state.valueOrNull;
-    if (current == null || !current.hasMore || current.isLoadingMore) return;
+    if (current == null ||
+        !current.hasMore ||
+        current.isLoadingMore ||
+        current.isRefreshing) {
+      return;
+    }
 
     state = AsyncData(current.copyWith(isLoadingMore: true));
 
@@ -160,7 +196,36 @@ class PrayerListNotifier extends AsyncNotifier<PrayerListState> {
   }
 
   Future<void> refresh() async {
-    ref.invalidateSelf();
-    await future;
+    final current = state.valueOrNull;
+    if (current == null) {
+      ref.invalidateSelf();
+      await future;
+      return;
+    }
+
+    state = AsyncData(current.copyWith(isRefreshing: true));
+
+    final filter = ref.read(prayerFilterProvider);
+    final startDate = filter.startDate;
+    final endDate = filter.endDate;
+    final repo = ref.read(prayerRepositoryProvider);
+
+    try {
+      final response = await repo.listPrayers(
+        startDate: startDate?.toUtc().toIso8601String(),
+        endDate: endDate?.toUtc().toIso8601String(),
+      );
+
+      state = AsyncData(
+        PrayerListState(
+          items: response.items,
+          nextCursor: response.nextCursor,
+          hasMore: response.hasMore,
+        ),
+      );
+    } on Object {
+      state = AsyncData(current.copyWith(isRefreshing: false));
+      rethrow;
+    }
   }
 }

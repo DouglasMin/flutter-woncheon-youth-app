@@ -6,10 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:woncheon_youth/core/api/auth_event_bus.dart';
-import 'package:woncheon_youth/core/storage/read_prayers_storage.dart';
 import 'package:woncheon_youth/core/push/push_providers.dart';
 import 'package:woncheon_youth/core/router/app_router.dart';
+import 'package:woncheon_youth/core/storage/read_prayers_storage.dart';
 import 'package:woncheon_youth/core/theme/app_theme.dart';
+import 'package:woncheon_youth/core/update/app_update_lifecycle_observer.dart';
 import 'package:woncheon_youth/l10n/app_localizations.dart' show L10n;
 
 /// On iOS, keychain data survives app uninstall.
@@ -97,6 +98,7 @@ class WoncheonYouthApp extends ConsumerStatefulWidget {
 class _WoncheonYouthAppState extends ConsumerState<WoncheonYouthApp> {
   StreamSubscription<AuthEvent>? _authSub;
   StreamSubscription<String>? _notifTapSub;
+  AppUpdateLifecycleObserver? _updateLifecycleObserver;
 
   @override
   void initState() {
@@ -111,7 +113,7 @@ class _WoncheonYouthAppState extends ConsumerState<WoncheonYouthApp> {
 
     // Request notification permission on app start
     final pushService = ref.read(pushNotificationServiceProvider);
-    pushService.requestPermission();
+    unawaited(pushService.requestPermission());
 
     // Notification tap deep link listener
     _notifTapSub = pushService.onNotificationTapped.listen((screen) {
@@ -119,10 +121,16 @@ class _WoncheonYouthAppState extends ConsumerState<WoncheonYouthApp> {
         ref.read(routerProvider).go(AppRoutes.prayerList);
       }
     });
+
+    _updateLifecycleObserver = AppUpdateLifecycleObserver(
+      contextProvider: () =>
+          ref.read(routerProvider).routerDelegate.navigatorKey.currentContext,
+    )..start();
   }
 
   @override
   void dispose() {
+    _updateLifecycleObserver?.stop();
     _authSub?.cancel();
     _notifTapSub?.cancel();
     super.dispose();

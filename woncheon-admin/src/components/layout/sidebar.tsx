@@ -13,6 +13,7 @@ import {
   LogOut,
   Church,
   Flag,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ const navItems = [
   { href: "/members", label: "회원 관리", icon: Users },
   { href: "/attendance", label: "출결 현황", icon: CalendarCheck },
   { href: "/prayers", label: "중보기도", icon: Heart },
+  { href: "/notices", label: "공지사항", icon: Megaphone },
   { href: "/reports", label: "신고 검토", icon: Flag, watchKey: "reports" as const },
   { href: "/groups", label: "목장 관리", icon: FolderKanban },
   { href: "/register-requests", label: "가입 요청", icon: UserPlus },

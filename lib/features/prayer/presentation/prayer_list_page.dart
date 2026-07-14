@@ -34,9 +34,10 @@ class _PrayerListPageState extends ConsumerState<PrayerListPage> {
   }
 
   void _onScroll() {
-    final isLoading =
-        ref.read(prayerListProvider).valueOrNull?.isLoadingMore ?? false;
-    if (isLoading) return;
+    final listState = ref.read(prayerListProvider).valueOrNull;
+    final isBusy =
+        listState == null || listState.isLoadingMore || listState.isRefreshing;
+    if (isBusy) return;
     if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200) {
       ref.read(prayerListProvider.notifier).loadMore();

@@ -4,9 +4,9 @@
 
 **Goal:** Build a minimal 공지사항 feature where admins can create/manage notices and app users can read published notices.
 
-**Architecture:** Store notices in the existing DynamoDB single table with `NOTICE#{noticeId}` as the primary item and `GSI2PK = NOTICE_LIST` for latest-first app/admin listing. The Flutter app gets read-only JWT-protected public notice APIs from the Serverless backend; the Next.js admin panel uses its existing `/api/admin/*` routes to write and manage the same DynamoDB items. This plan deliberately excludes push notification fan-out for notices; that is a separate phase after the read surface is stable.
+**Architecture:** Store notices in the existing DynamoDB single table with `NOTICE#{noticeId}` as the primary item and `GSI2PK = NOTICE_LIST` for latest-first app/admin listing. The Flutter app gets read-only JWT-protected public notice APIs from the Serverless backend; the Next.js admin panel uses its existing `/api/admin/*` routes to write and manage the same DynamoDB items. Notice push notifications are sent by a DynamoDB Stream Lambda only when a notice enters `published` for the first time and has no `notifiedAt`, so edits and re-publishes do not fan out duplicate SNS messages.
 
-**Tech Stack:** Flutter/Riverpod/GoRouter/Dio, Serverless Framework v4, AWS Lambda Node.js 22/TypeScript, DynamoDB DocumentClient, Next.js admin panel, shadcn-style UI components, Vitest, Flutter widget tests.
+**Tech Stack:** Flutter/Riverpod/GoRouter/Dio, Serverless Framework v4, AWS Lambda Node.js 22/TypeScript, DynamoDB DocumentClient + Streams, AWS SNS, Next.js admin panel, shadcn-style UI components, Vitest, Flutter widget tests.
 
 ---
 
@@ -18,15 +18,17 @@ Implement now:
 - App can list published notices.
 - App can open notice detail.
 - App shows consistent loading/error/empty states.
+- First-time publish sends one SNS push notification to all registered devices.
 
 Do not implement now:
-- Push notifications for notices.
 - Rich text editor.
 - Attachments/images.
 - Per-user read receipts.
 - Notice comments/reactions.
+- Manual "send notification again" admin action.
+- Audience targeting; v1 sends to all registered devices.
 
-This keeps the feature small enough to ship safely while preserving the future path for push.
+This keeps the feature small enough to ship safely while avoiding duplicate push behavior.
 
 ## DynamoDB Shape
 
@@ -45,7 +47,12 @@ Notice item:
   pinned: boolean,
   createdAt: string,
   updatedAt: string,
-  publishedAt?: string
+  publishedAt?: string,
+  notifiedAt?: string,
+  notificationStatus?: "pending" | "sending" | "sent" | "partial_fail" | "failed",
+  notificationRecipientCount?: number,
+  notificationSuccessCount?: number,
+  notificationFailureCount?: number
 }
 ```
 
@@ -54,6 +61,15 @@ App list ordering:
 - `ScanIndexForward: false`.
 - Return only `status = "published"`.
 - Pinned ordering is not special in v1. `pinned` is stored now but only displayed as a badge. This avoids extra indexes and keeps writes simple.
+
+Push notification policy:
+- Draft create/update never sends push.
+- `draft -> published` sends one push if `notifiedAt` is missing.
+- Published create sends one push if `notifiedAt` is missing.
+- Published edit never sends push.
+- `published -> draft` never sends push.
+- Re-publish after a prior notification does not send push because `notifiedAt` remains set.
+- The stream worker claims delivery by setting `notificationStatus = "sending"` before publishing, then records `notifiedAt` and delivery counts after `Promise.allSettled`.
 
 ---
 
@@ -67,10 +83,18 @@ App list ordering:
   - App API: `GET /notices`.
 - Create `woncheon-backend/src/functions/notice/get.ts`
   - App API: `GET /notices/{noticeId}`.
+- Create `woncheon-backend/src/libs/device-notifications.ts`
+  - Shared helper to query all registered SNS endpoints and publish a notice push.
+- Create `woncheon-backend/src/functions/notice/sendNotification.ts`
+  - DynamoDB Stream worker that sends exactly-once best-effort notice notifications.
 - Modify `woncheon-backend/serverless.yml`
   - Add two JWT-protected app endpoints.
+  - Enable DynamoDB Streams on the existing `woncheon-${stage}` table.
+  - Add one stream-triggered Lambda for notice push fan-out.
 - Create `woncheon-backend/tests/notice/list.test.ts`
   - Unit tests for response mapping/filtering helpers.
+- Create `woncheon-backend/tests/notice/notification-policy.test.ts`
+  - Unit tests for first-publish-only push policy.
 
 ### Admin
 
@@ -117,6 +141,7 @@ App list ordering:
 **Files:**
 - Create: `woncheon-backend/src/types/notice.ts`
 - Create: `woncheon-backend/tests/notice/list.test.ts`
+- Create: `woncheon-backend/tests/notice/notification-policy.test.ts`
 
 - [ ] **Step 1: Create the failing backend test**
 
@@ -182,7 +207,67 @@ FAIL tests/notice/list.test.ts
 Cannot find module '../../src/types/notice.js'
 ```
 
-- [ ] **Step 3: Implement notice types and mapper**
+- [ ] **Step 3: Create the failing notification policy test**
+
+Create `woncheon-backend/tests/notice/notification-policy.test.ts`:
+
+```ts
+import { describe, expect, it } from "vitest";
+import { shouldSendNoticeNotification } from "../../src/types/notice.js";
+
+describe("notice notification policy", () => {
+  it("sends when a draft is first published", () => {
+    expect(
+      shouldSendNoticeNotification(
+        { status: "draft" },
+        { status: "published" },
+      ),
+    ).toBe(true);
+  });
+
+  it("does not send when a published notice is edited", () => {
+    expect(
+      shouldSendNoticeNotification(
+        { status: "published" },
+        { status: "published" },
+      ),
+    ).toBe(false);
+  });
+
+  it("does not send when a previously notified notice is republished", () => {
+    expect(
+      shouldSendNoticeNotification(
+        { status: "draft", notifiedAt: "2026-07-03T01:00:00.000Z" },
+        { status: "published", notifiedAt: "2026-07-03T01:00:00.000Z" },
+      ),
+    ).toBe(false);
+  });
+
+  it("sends for a newly created published notice with no notifiedAt", () => {
+    expect(
+      shouldSendNoticeNotification(undefined, { status: "published" }),
+    ).toBe(true);
+  });
+});
+```
+
+- [ ] **Step 4: Run the policy test to verify it fails**
+
+Run:
+
+```bash
+cd woncheon-backend
+pnpm test tests/notice/notification-policy.test.ts
+```
+
+Expected:
+
+```text
+FAIL tests/notice/notification-policy.test.ts
+No matching export for import "shouldSendNoticeNotification"
+```
+
+- [ ] **Step 5: Implement notice types, mapper, and notification policy**
 
 Create `woncheon-backend/src/types/notice.ts`:
 
@@ -202,6 +287,11 @@ export interface NoticeRecord {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  notifiedAt?: string;
+  notificationStatus?: "pending" | "sending" | "sent" | "partial_fail" | "failed";
+  notificationRecipientCount?: number;
+  notificationSuccessCount?: number;
+  notificationFailureCount?: number;
 }
 
 export interface NoticeListItem {
@@ -244,27 +334,37 @@ export function toNoticeDetail(item: NoticeRecord): NoticeDetail {
     publishedAt: item.publishedAt ?? item.createdAt,
   };
 }
+
+export function shouldSendNoticeNotification(
+  previous: Pick<NoticeRecord, "status" | "notifiedAt"> | undefined,
+  next: Pick<NoticeRecord, "status" | "notifiedAt">,
+): boolean {
+  if (next.status !== "published") return false;
+  if (next.notifiedAt) return false;
+  return previous?.status !== "published";
+}
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **Step 6: Run the tests to verify they pass**
 
 Run:
 
 ```bash
 cd woncheon-backend
-pnpm test tests/notice/list.test.ts
+pnpm test tests/notice/list.test.ts tests/notice/notification-policy.test.ts
 ```
 
 Expected:
 
 ```text
 PASS tests/notice/list.test.ts
+PASS tests/notice/notification-policy.test.ts
 ```
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add woncheon-backend/src/types/notice.ts woncheon-backend/tests/notice/list.test.ts
+git add woncheon-backend/src/types/notice.ts woncheon-backend/tests/notice/list.test.ts woncheon-backend/tests/notice/notification-policy.test.ts
 git commit -m "feat: add notice backend types"
 ```
 
@@ -436,7 +536,245 @@ git commit -m "feat: add app notice api"
 
 ---
 
-## Task 3: Admin Notice API
+## Task 3: Backend Notice Push Notification Worker
+
+**Files:**
+- Create: `woncheon-backend/src/libs/device-notifications.ts`
+- Create: `woncheon-backend/src/functions/notice/sendNotification.ts`
+- Modify: `woncheon-backend/serverless.yml`
+
+**Infrastructure changes:**
+- Enable DynamoDB Streams on the existing `woncheon-${stage}` table with `StreamViewType: NEW_AND_OLD_IMAGES`.
+- Add one Lambda function: `sendNoticeNotification`.
+- Add one DynamoDB Stream event source mapping from `WoncheonTable.StreamArn` to `sendNoticeNotification`.
+- No new DynamoDB table, no new GSI, no new SNS Platform Application.
+
+- [ ] **Step 1: Create shared device notification helper**
+
+Create `woncheon-backend/src/libs/device-notifications.ts`:
+
+```ts
+import { BatchGetCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import { docClient, TABLE_NAME } from "./dynamo.js";
+import { publishToEndpoint } from "./sns.js";
+
+export interface NotificationFanoutResult {
+  total: number;
+  successCount: number;
+  failureCount: number;
+}
+
+export async function queryAllDeviceEndpoints(): Promise<string[]> {
+  const keys: Array<{ PK: string; SK: string }> = [];
+  let lastKey: Record<string, unknown> | undefined;
+
+  do {
+    const result = await docClient.send(
+      new QueryCommand({
+        TableName: TABLE_NAME,
+        IndexName: "GSI3",
+        KeyConditionExpression: "GSI3PK = :pk",
+        ExpressionAttributeValues: { ":pk": "ALL_DEVICES" },
+        ExclusiveStartKey: lastKey,
+      }),
+    );
+
+    for (const item of result.Items ?? []) {
+      if (typeof item.PK === "string" && typeof item.SK === "string") {
+        keys.push({ PK: item.PK, SK: item.SK });
+      }
+    }
+    lastKey = result.LastEvaluatedKey;
+  } while (lastKey);
+
+  const endpoints: string[] = [];
+  for (let i = 0; i < keys.length; i += 100) {
+    const batch = await docClient.send(
+      new BatchGetCommand({
+        RequestItems: { [TABLE_NAME]: { Keys: keys.slice(i, i + 100) } },
+      }),
+    );
+
+    for (const device of batch.Responses?.[TABLE_NAME] ?? []) {
+      if (typeof device.snsEndpoint === "string" && device.snsEndpoint.length > 0) {
+        endpoints.push(device.snsEndpoint);
+      }
+    }
+  }
+
+  return endpoints;
+}
+
+export async function publishNoticeToAllDevices(params: {
+  noticeId: string;
+  title: string;
+  body: string;
+}): Promise<NotificationFanoutResult> {
+  const endpoints = await queryAllDeviceEndpoints();
+  const results = await Promise.allSettled(
+    endpoints.map((endpoint) =>
+      publishToEndpoint(endpoint, "원천청년부 공지", params.title, {
+        screen: "notice_detail",
+        noticeId: params.noticeId,
+      }),
+    ),
+  );
+
+  const successCount = results.filter((result) => result.status === "fulfilled").length;
+  return {
+    total: endpoints.length,
+    successCount,
+    failureCount: endpoints.length - successCount,
+  };
+}
+```
+
+- [ ] **Step 2: Create stream worker**
+
+Create `woncheon-backend/src/functions/notice/sendNotification.ts`:
+
+```ts
+import type { DynamoDBStreamHandler } from "aws-lambda";
+import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { docClient, TABLE_NAME } from "../../libs/dynamo.js";
+import { publishNoticeToAllDevices } from "../../libs/device-notifications.js";
+import { makeNoticePreview, shouldSendNoticeNotification } from "../../types/notice.js";
+
+type StreamImage = Record<string, { S?: string; BOOL?: boolean; N?: string }>;
+
+function readString(image: StreamImage | undefined, key: string): string | undefined {
+  return image?.[key]?.S;
+}
+
+function noticeFromImage(image: StreamImage | undefined) {
+  const noticeId = readString(image, "noticeId");
+  const status = readString(image, "status");
+  if (!noticeId || (status !== "draft" && status !== "published")) return undefined;
+
+  return {
+    noticeId,
+    title: readString(image, "title") ?? "",
+    content: readString(image, "content") ?? "",
+    status,
+    notifiedAt: readString(image, "notifiedAt"),
+  };
+}
+
+async function claimNotification(noticeId: string): Promise<boolean> {
+  try {
+    await docClient.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: `NOTICE#${noticeId}`, SK: "#META" },
+        UpdateExpression:
+          "SET notificationStatus = :sending, notificationClaimedAt = :now",
+        ConditionExpression:
+          "#status = :published AND attribute_not_exists(notifiedAt) AND (attribute_not_exists(notificationStatus) OR notificationStatus = :pending)",
+        ExpressionAttributeNames: { "#status": "status" },
+        ExpressionAttributeValues: {
+          ":published": "published",
+          ":pending": "pending",
+          ":sending": "sending",
+          ":now": new Date().toISOString(),
+        },
+      }),
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const handler: DynamoDBStreamHandler = async (event) => {
+  for (const record of event.Records) {
+    const previous = noticeFromImage(record.dynamodb?.OldImage as StreamImage | undefined);
+    const next = noticeFromImage(record.dynamodb?.NewImage as StreamImage | undefined);
+    if (!next || !shouldSendNoticeNotification(previous, next)) continue;
+
+    const claimed = await claimNotification(next.noticeId);
+    if (!claimed) continue;
+
+    const result = await publishNoticeToAllDevices({
+      noticeId: next.noticeId,
+      title: next.title,
+      body: makeNoticePreview(next.content),
+    });
+
+    const notificationStatus =
+      result.failureCount === 0 ? "sent" : result.successCount > 0 ? "partial_fail" : "failed";
+
+    await docClient.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { PK: `NOTICE#${next.noticeId}`, SK: "#META" },
+        UpdateExpression:
+          "SET notifiedAt = :now, notificationStatus = :status, notificationRecipientCount = :total, notificationSuccessCount = :success, notificationFailureCount = :failure",
+        ExpressionAttributeValues: {
+          ":now": new Date().toISOString(),
+          ":status": notificationStatus,
+          ":total": result.total,
+          ":success": result.successCount,
+          ":failure": result.failureCount,
+        },
+      }),
+    );
+  }
+};
+```
+
+- [ ] **Step 3: Register stream worker in Serverless**
+
+Modify `woncheon-backend/serverless.yml` inside `functions:`:
+
+```yaml
+  sendNoticeNotification:
+    handler: src/functions/notice/sendNotification.handler
+    events:
+      - stream:
+          type: dynamodb
+          arn:
+            Fn::GetAtt:
+              - WoncheonTable
+              - StreamArn
+          batchSize: 10
+          startingPosition: LATEST
+          maximumRetryAttempts: 0
+```
+
+Modify `resources.Resources.WoncheonTable.Properties`:
+
+```yaml
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+```
+
+- [ ] **Step 4: Type-check/package backend**
+
+Run:
+
+```bash
+cd woncheon-backend
+pnpm test
+pnpm sls package --stage dev
+```
+
+Expected:
+
+```text
+Test Files ... passed
+Service packaged
+```
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add woncheon-backend/src/libs/device-notifications.ts woncheon-backend/src/functions/notice/sendNotification.ts woncheon-backend/serverless.yml
+git commit -m "feat: send notice push on first publish"
+```
+
+---
+
+## Task 4: Admin Notice API
 
 **Files:**
 - Create: `woncheon-admin/src/app/api/admin/notices/route.ts`
@@ -494,6 +832,11 @@ export async function GET() {
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       publishedAt: item.publishedAt ?? null,
+      notifiedAt: item.notifiedAt ?? null,
+      notificationStatus: item.notificationStatus ?? null,
+      notificationRecipientCount: item.notificationRecipientCount ?? 0,
+      notificationSuccessCount: item.notificationSuccessCount ?? 0,
+      notificationFailureCount: item.notificationFailureCount ?? 0,
     }));
 
     return NextResponse.json({ notices });
@@ -516,6 +859,7 @@ export async function POST(request: Request) {
     const status = body.status ?? "draft";
     const publishedAt = status === "published" ? now : undefined;
     const sortAt = publishedAt ?? now;
+    const notificationStatus = status === "published" ? "pending" : undefined;
 
     await docClient.send(
       new PutCommand({
@@ -533,6 +877,7 @@ export async function POST(request: Request) {
           createdAt: now,
           updatedAt: now,
           publishedAt,
+          notificationStatus,
         },
       }),
     );
@@ -568,27 +913,45 @@ export async function PUT(request: Request) {
 
     const now = new Date().toISOString();
     const nextStatus = body.status ?? "draft";
+    const previousStatus = existing.Item.status as NoticeStatus;
+    const previousNotifiedAt = existing.Item.notifiedAt as string | undefined;
     const previousPublishedAt = existing.Item.publishedAt as string | undefined;
     const nextPublishedAt =
       nextStatus === "published" ? previousPublishedAt ?? now : undefined;
     const sortAt = nextPublishedAt ?? (existing.Item.createdAt as string) ?? now;
+    const shouldQueueNotification =
+      previousStatus !== "published" && nextStatus === "published" && !previousNotifiedAt;
+
+    const setExpressions = [
+      "GSI2SK = :gsi2sk",
+      "title = :title",
+      "content = :content",
+      "#status = :status",
+      "pinned = :pinned",
+      "updatedAt = :updatedAt",
+      "publishedAt = :publishedAt",
+    ];
+    const expressionAttributeValues: Record<string, unknown> = {
+      ":gsi2sk": `${sortAt}#${body.noticeId}`,
+      ":title": body.title!.trim(),
+      ":content": body.content!.trim(),
+      ":status": nextStatus,
+      ":pinned": body.pinned ?? false,
+      ":updatedAt": now,
+      ":publishedAt": nextPublishedAt,
+    };
+    if (shouldQueueNotification) {
+      setExpressions.push("notificationStatus = :notificationStatus");
+      expressionAttributeValues[":notificationStatus"] = "pending";
+    }
 
     await docClient.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
         Key: { PK: `NOTICE#${body.noticeId}`, SK: "#META" },
-        UpdateExpression:
-          "SET GSI2SK = :gsi2sk, title = :title, content = :content, #status = :status, pinned = :pinned, updatedAt = :updatedAt, publishedAt = :publishedAt",
+        UpdateExpression: `SET ${setExpressions.join(", ")}`,
         ExpressionAttributeNames: { "#status": "status" },
-        ExpressionAttributeValues: {
-          ":gsi2sk": `${sortAt}#${body.noticeId}`,
-          ":title": body.title!.trim(),
-          ":content": body.content!.trim(),
-          ":status": nextStatus,
-          ":pinned": body.pinned ?? false,
-          ":updatedAt": now,
-          ":publishedAt": nextPublishedAt,
-        },
+        ExpressionAttributeValues: expressionAttributeValues,
       }),
     );
 
@@ -622,6 +985,8 @@ export async function DELETE(request: Request) {
 }
 ```
 
+Do not reset `notifiedAt` on edit, unpublish, or re-publish. The stream worker relies on `notifiedAt` staying present to prevent duplicate SNS fan-out.
+
 - [ ] **Step 2: Build admin**
 
 Run:
@@ -646,7 +1011,7 @@ git commit -m "feat: add admin notice api"
 
 ---
 
-## Task 4: Admin Notice Management Page
+## Task 5: Admin Notice Management Page
 
 **Files:**
 - Create: `woncheon-admin/src/app/(admin)/notices/page.tsx`
@@ -996,7 +1361,7 @@ git commit -m "feat: add admin notices page"
 
 ---
 
-## Task 5: Flutter Notice Model and Repository
+## Task 6: Flutter Notice Model and Repository
 
 **Files:**
 - Create: `lib/features/notice/domain/notice_model.dart`
@@ -1131,7 +1496,7 @@ git commit -m "feat: add notice app data layer"
 
 ---
 
-## Task 6: Flutter Notice Providers
+## Task 7: Flutter Notice Providers
 
 **Files:**
 - Create: `lib/features/notice/presentation/notice_providers.dart`
@@ -1199,7 +1564,7 @@ git commit -m "feat: add notice providers"
 
 ---
 
-## Task 7: Flutter Notice List and Detail Screens
+## Task 8: Flutter Notice List and Detail Screens
 
 **Files:**
 - Create: `test/features/notice/presentation/notice_list_page_test.dart`
@@ -1524,7 +1889,7 @@ git commit -m "feat: add notice app screens"
 
 ---
 
-## Task 8: Flutter Routing and Home Tile
+## Task 9: Flutter Routing and Home Tile
 
 **Files:**
 - Modify: `lib/core/router/app_router.dart`
@@ -1607,7 +1972,7 @@ git commit -m "feat: route home notice tile"
 
 ---
 
-## Task 9: Verification and Manual QA
+## Task 10: Verification and Manual QA
 
 **Files:**
 - No source files.
@@ -1649,6 +2014,13 @@ Vitest tests pass
 Serverless package succeeds
 ```
 
+Confirm the packaged CloudFormation includes these infra changes:
+- Existing DynamoDB table `woncheon-dev` receives `StreamSpecification: NEW_AND_OLD_IMAGES`.
+- New Lambda function for `sendNoticeNotification`.
+- New DynamoDB Stream event source mapping.
+- New API Gateway routes for `GET /notices` and `GET /notices/{noticeId}`.
+- No new DynamoDB table, no new GSI, no new SNS Platform Application.
+
 - [ ] **Step 3: Run admin verification**
 
 Run:
@@ -1670,8 +2042,15 @@ Compiled successfully
 
 ```bash
 cd woncheon-backend
-pnpm sls deploy --stage dev
+AWS_PROFILE=dongik2 pnpm sls deploy --stage dev
 ```
+
+Expected AWS target:
+- Account: `863518440691`
+- Region: `ap-northeast-2`
+- Stage: `dev`
+- Stack/service: `woncheon-backend`
+- Existing table: `woncheon-dev`
 
 2. Start admin:
 
@@ -1684,8 +2063,14 @@ pnpm dev
 - Open `/notices`.
 - Create draft notice.
 - Confirm draft appears in admin.
+- Confirm no device receives a push for draft creation.
 - Publish the notice.
 - Confirm status changes to `게시 중`.
+- Confirm one SNS push is received on registered devices.
+- Edit the published notice title/body.
+- Confirm no additional push is received.
+- Unpublish and re-publish the same notice.
+- Confirm no additional push is received because `notifiedAt` remains set.
 
 4. In Flutter app:
 - Run the app.
@@ -1713,14 +2098,17 @@ No unexpected files except build artifacts ignored by git
 ## Self-Review
 
 Spec coverage:
-- Admin CRUD: Task 3 and Task 4.
-- App read-only list/detail: Task 2, Task 5, Task 6, Task 7, Task 8.
-- Existing Home tile activation: Task 8.
-- Backend storage and indexes: DynamoDB shape section and Task 2/3.
-- Verification: Task 9.
+- Admin CRUD: Task 4 and Task 5.
+- App read-only list/detail: Task 2, Task 6, Task 7, Task 8, Task 9.
+- Existing Home tile activation: Task 9.
+- Backend storage and indexes: DynamoDB shape section and Task 2/3/4.
+- First-publish-only SNS push: DynamoDB shape section and Task 1/3/4/10.
+- Verification: Task 10.
 
 Scope check:
-- Push notifications are excluded intentionally because they require delivery semantics, audience selection, and operational safety decisions.
+- Push notifications are included only for first-time publish and are guarded by `notifiedAt`.
+- Duplicate notification paths are excluded intentionally: no push on edit, unpublish, or re-publish.
+- Manual resend and audience targeting are excluded intentionally to avoid accidental broadcast behavior.
 - Rich text and attachments are excluded intentionally to keep v1 shippable.
 - Store release commands are intentionally excluded from this implementation plan. After the feature passes QA, use the separate iOS/Android release runbook for version bumping and store uploads.
 
@@ -1728,6 +2116,6 @@ Placeholder scan:
 - No `TBD`, `TODO`, or open-ended implementation placeholders are present.
 
 Type consistency:
-- Backend uses `noticeId`, `title`, `content`, `status`, `pinned`, `createdAt`, `updatedAt`, `publishedAt`.
+- Backend uses `noticeId`, `title`, `content`, `status`, `pinned`, `createdAt`, `updatedAt`, `publishedAt`, `notifiedAt`, `notificationStatus`, and notification delivery counts.
 - Flutter model uses `noticeId`, `title`, `contentPreview`, `content`, `pinned`, `publishedAt`.
 - Admin API returns the same fields consumed by admin page.
